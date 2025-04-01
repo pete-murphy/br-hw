@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "vite-plugin-elm-watch": "^1.4.2"
+  }
+}
