@@ -1,3 +1,44 @@
 @import "tailwindcss";
 
 @source './**/*.{js,elm,ts,css,html}';
+
+@theme {
+  --font-sans: GTUltra;
+
+  /* ORANGE */
+  --color-accent-50: oklch(96.84% 0.014 46.23);
+  --color-accent-100: oklch(93.61% 0.027 47.21);
+  --color-accent-200: oklch(86.44% 0.06 45.85);
+  --color-accent-300: oklch(80.34% 0.09 45.8);
+  --color-accent-400: oklch(74.63% 0.121 45.15);
+  --color-accent-500: oklch(68.69% 0.155 44.19);
+  --color-accent-600: oklch(63.52% 0.182 41.07); /* #E15A1D */
+  --color-accent-700: oklch(51.33% 0.142 41.94);
+  --color-accent-800: oklch(39.08% 0.104 42.48);
+  --color-accent-900: oklch(24.5% 0.057 44.33);
+  --color-accent-950: oklch(17.14% 0.034 51.83);
+
+  /* BLUISH GRAY */
+  --color-neutral-50: oklch(98.5% 0.002 198.81);
+  --color-neutral-100: oklch(95.775% 0.00425 215.52);
+  --color-neutral-200: oklch(90.95% 0.0085 215.51);
+  --color-neutral-300: oklch(84.425% 0.01375 209.31);
+  --color-neutral-400: oklch(67% 0.027 212.3);
+  --color-neutral-500: oklch(52.017% 0.03117 215.34);
+  --color-neutral-600: oklch(42.133% 0.03333 207.78);
+  --color-neutral-700: oklch(35.45% 0.0365 210.71);
+  --color-neutral-800: oklch(26.567% 0.03467 207.82);
+  --color-neutral-900: oklch(20.383% 0.03483 215.64);
+  --color-neutral-950: oklch(13% 0.028 212.67);
+}
+
+@layer typography {
+  @font-face {
+    font-family: GTUltra;
+    src: url("/GT-Ultra-Trial-VF.ttf") format("truetype-variations");
+    font-weight: 100 950;
+    font-stretch: 50% 200%;
+    font-style: normal;
+    font-display: swap;
+  }
+}
