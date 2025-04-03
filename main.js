@@ -28,7 +28,7 @@ customElements.define(
         if (newValue == "true") {
           this.firstElementChild.focus();
         } else {
-          this.firstElementChild.blur();
+          this.firstElementChild?.blur();
         }
       }
     }

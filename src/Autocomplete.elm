@@ -17,7 +17,6 @@ import Html.Attributes as Attributes
 import Html.Events as Events
 import Html.Events.Extra
 import Json.Decode as Decode
-import Json.Encode
 import RemoteData exposing (RemoteData(..), WebData)
 
 
@@ -39,14 +38,17 @@ type Focus
 
 incrementFocus : Int -> Focus -> Focus
 incrementFocus optionsLength focus =
-    case focus of
-        Input ->
+    case ( optionsLength == 0, focus ) of
+        ( True, _ ) ->
+            Input
+
+        ( _, Input ) ->
             Listbox { index = 0 }
 
-        Listbox { index } ->
+        ( _, Listbox { index } ) ->
             Listbox { index = Basics.min (optionsLength - 1) (index + 1) }
 
-        Elsewhere ->
+        ( _, Elsewhere ) ->
             Input
 
 
@@ -80,16 +82,20 @@ listboxHasFocus focus =
             False
 
 
+type Value
+    = InputText String
+    | SelectedLocation Location
+
+
 
 -- MODEL
 
 
 type alias Model =
-    { searchInput : String
+    { value : Value
     , searchResults : WebData (List Location)
     , debouncer : Debouncer String
     , focus : Focus
-    , selectedLocation : Maybe Location
 
     -- , inputHasFocus : Bool
     -- , listboxHasFocus : Bool
@@ -98,11 +104,10 @@ type alias Model =
 
 init : Model
 init =
-    { searchInput = ""
+    { value = InputText ""
     , searchResults = NotAsked
     , debouncer = Debouncer.init
     , focus = Elsewhere
-    , selectedLocation = Nothing
     }
 
 
@@ -116,6 +121,15 @@ options =
     ]
 
 
+filterOptions : String -> List Location
+filterOptions search =
+    options
+        |> List.filter
+            (\location ->
+                String.contains (String.toLower search) (String.toLower location.name)
+            )
+
+
 
 -- UPDATE
 
@@ -127,12 +141,10 @@ type Msg
     | UserFocused Focus
     | UserBlurred Focus
     | UserClicked Focus
-    | UserPressedUpKey
-    | UserPressedDownKey
+    | UserPressedArrowUpKey
+    | UserPressedArrowDownKey
     | AttemptBlur Focus
     | UserSelected Location
-      -- | AttemptBlurListbox
-    | NoOp
 
 
 update : (Msg -> msg) -> Msg -> Model -> ( Model, Cmd msg )
@@ -144,27 +156,22 @@ update fromMsg msg model =
 update_ : Msg -> Model -> ( Model, Cmd Msg )
 update_ msg model =
     case msg of
-        NoOp ->
-            let
-                _ =
-                    Debug.log "NoOp" ()
-            in
-            ( model, Cmd.none )
-
         UserEnteredSearch search ->
             let
                 ( debouncer, cmd ) =
                     Debouncer.call debouncerConfig search model.debouncer
             in
             ( { model
-                | searchInput = search
+                | value = InputText search
                 , debouncer = debouncer
               }
             , cmd
             )
 
         UserEnteredDebouncedSearch search ->
-            ( model, Cmd.none )
+            ( { model | searchResults = Success (filterOptions search) }
+            , Cmd.none
+            )
 
         GotDebouncerMsg debouncerMsg ->
             let
@@ -175,10 +182,18 @@ update_ msg model =
             , cmd
             )
 
-        UserPressedDownKey ->
-            ( { model | focus = incrementFocus (List.length options) model.focus }, Cmd.none )
+        UserPressedArrowDownKey ->
+            case model.searchResults of
+                Success [] ->
+                    ( model, Cmd.none )
 
-        UserPressedUpKey ->
+                Success filteredOptions ->
+                    ( { model | focus = incrementFocus (List.length filteredOptions) model.focus }, Cmd.none )
+
+                _ ->
+                    ( model, Cmd.none )
+
+        UserPressedArrowUpKey ->
             ( { model | focus = decrementFocus model.focus }, Cmd.none )
 
         UserFocused focus ->
@@ -194,16 +209,15 @@ update_ msg model =
 
         UserSelected location ->
             ( { model
-                | searchInput = ""
+                | value = SelectedLocation location
                 , focus = Input
-                , searchResults =
-                    RemoteData.Loading
-                , selectedLocation = Just location
               }
             , Cmd.none
             )
 
         AttemptBlur focus ->
+            -- We need to wait a tick to see if the focus has been set by some
+            -- other message (like arrow key up/down)
             ( { model
                 | focus =
                     if model.focus == focus then
@@ -214,19 +228,6 @@ update_ msg model =
               }
             , Cmd.none
             )
-
-
-
--- AttemptBlurListbox ->
---     ( { model
---         | focus =
---             if listboxHasFocus model.focus then
---                 Elsewhere
---             else
---                 model.focus
---       }
---     , Cmd.none
---     )
 
 
 debouncerConfig : Debouncer.Config String Msg
@@ -255,9 +256,18 @@ view_ model =
             "autocomplete-options"
 
         isExpanded =
-            model.searchInput
-                /= ""
-                || listboxHasFocus model.focus
+            case ( model.searchResults, model.focus, model.value ) of
+                ( NotAsked, _, _ ) ->
+                    False
+
+                ( _, Elsewhere, _ ) ->
+                    False
+
+                ( _, _, SelectedLocation _ ) ->
+                    False
+
+                ( _, _, _ ) ->
+                    True
     in
     Html.div
         [ Attributes.class "p-2 max-w-lg grid gap-2"
@@ -271,7 +281,14 @@ view_ model =
             (focusWithin (model.focus == Input)
                 [ Attributes.class "grid"
                 ]
-                [ Html.inputText model.searchInput
+                [ Html.inputText
+                    (case model.value of
+                        InputText search ->
+                            search
+
+                        SelectedLocation location ->
+                            location.name
+                    )
                     [ Aria.owns [ listboxId ]
                     , Aria.autoCompleteList
                     , Role.comboBox
@@ -286,47 +303,57 @@ view_ model =
                     ]
                 ]
             )
-        , Html.ul
+        , Html.div
             [ Role.listBox
             , Attributes.id listboxId
             , Attributes.class "group opacity-0 h-0 transition-[height,_opacity]  overflow-clip transition-discrete border border-neutral-500 border-solid bg-white shadow-md"
             , Attributes.classList
                 [ ( "h-[calc-size(auto,_size)] opacity-100", isExpanded ) ]
             ]
-            (options
-                |> List.indexedMap
-                    (\i location ->
-                        let
-                            hasFocus =
-                                model.focus == Listbox { index = i }
-                        in
-                        Html.li
-                            [ Attributes.attribute "aria-selected"
-                                (if hasFocus then
-                                    "true"
+            [ case model.searchResults of
+                Success [] ->
+                    Html.text "No results found"
 
-                                 else
-                                    "false"
-                                )
-                            ]
-                            [ focusWithin hasFocus
-                                []
-                                [ Html.button
-                                    [ Attributes.class "outline-none w-full text-start p-2 focus:bg-neutral-700 focus:text-white active:bg-neutral-800 group-hover:not-hover:focus:bg-neutral-600 active:transition-colors hover:not-focus:bg-neutral-300"
-                                    , Attributes.tabindex -1
-                                    , Events.onBlur (UserBlurred (Listbox { index = i }))
-                                    , Events.onFocus (UserFocused (Listbox { index = i }))
-                                    , Events.onClick (UserSelected location)
-                                    , Html.Events.Extra.onKeyDown
-                                        [ ( "Enter", UserSelected location )
-                                        , ( "Space", UserSelected location )
+                Success results ->
+                    Html.ul []
+                        (results
+                            |> List.indexedMap
+                                (\i location ->
+                                    let
+                                        hasFocus =
+                                            model.focus == Listbox { index = i }
+                                    in
+                                    Html.li
+                                        [ Attributes.attribute "aria-selected"
+                                            (if hasFocus then
+                                                "true"
+
+                                             else
+                                                "false"
+                                            )
                                         ]
-                                    ]
-                                    [ Html.text location.name ]
-                                ]
-                            ]
-                    )
-            )
+                                        [ focusWithin hasFocus
+                                            []
+                                            [ Html.button
+                                                [ Attributes.class "outline-none w-full text-start p-2 focus:bg-neutral-700 focus:text-white active:bg-neutral-800 group-hover:not-hover:focus:bg-neutral-600 active:transition-colors hover:not-focus:bg-neutral-300"
+                                                , Attributes.tabindex -1
+                                                , Events.onBlur (UserBlurred (Listbox { index = i }))
+                                                , Events.onFocus (UserFocused (Listbox { index = i }))
+                                                , Events.onClick (UserSelected location)
+                                                , Html.Events.Extra.onKeyDown
+                                                    [ ( "Enter", UserSelected location )
+                                                    , ( "Space", UserSelected location )
+                                                    ]
+                                                ]
+                                                [ Html.text location.name ]
+                                            ]
+                                        ]
+                                )
+                        )
+
+                _ ->
+                    Html.text "Loading..."
+            ]
         , Html.div
             [ Attributes.class "sr-only"
             , Live.polite
@@ -346,8 +373,8 @@ focusWithin :
 focusWithin hasFocus attributes =
     Html_.node "focus-within"
         ([ Html.Events.Extra.onKeyDown
-            [ ( "ArrowDown", UserPressedDownKey )
-            , ( "ArrowUp", UserPressedUpKey )
+            [ ( "ArrowDown", UserPressedArrowDownKey )
+            , ( "ArrowUp", UserPressedArrowUpKey )
             ]
          , Attributes.attribute "hasfocus"
             (if hasFocus then
@@ -358,7 +385,7 @@ focusWithin hasFocus attributes =
             )
          , Events.custom "remove"
             (Decode.succeed
-                { message = NoOp
+                { message = UserFocused Input
                 , stopPropagation = False
                 , preventDefault = False
                 }
