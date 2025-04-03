@@ -120,9 +120,11 @@ type Msg
     | UserPressedArrowRightKey
     | UserSelectedSuggestion Suggestion
     | UserClearedInput
+    | UserPressedPrintableCharacterKey Char
       -- Imperative
     | ResetCursorAction
     | AttemptBlur Focus
+    | NoOp
 
 
 type OutMsg
@@ -213,6 +215,12 @@ update msg model =
             , Just (OutMsgUserSelectedSuggestion suggestion)
             )
 
+        UserPressedPrintableCharacterKey _ ->
+            ( { model | focus = Input }
+            , Cmd.none
+            , Nothing
+            )
+
         AttemptBlur focus ->
             -- We need to wait a tick to see if the focus has been set by some
             -- other message (like arrow key up/down)
@@ -237,6 +245,9 @@ update msg model =
             , Cmd.none
             , Nothing
             )
+
+        NoOp ->
+            ( model, Cmd.none, Nothing )
 
 
 debouncerConfig : Debouncer.Config String Msg
@@ -290,10 +301,20 @@ view model =
                 }
                 [ Attributes.class "grid"
                 , Html.Events.Extra.onKeyDown
-                    [ ( "ArrowDown", UserPressedArrowDownKey )
-                    , ( "ArrowUp", UserPressedArrowUpKey )
-                    , ( "Escape", UserClearedInput )
-                    ]
+                    (\key ->
+                        case key of
+                            Just "ArrowDown" ->
+                                UserPressedArrowDownKey
+
+                            Just "ArrowUp" ->
+                                UserPressedArrowUpKey
+
+                            Just "Escape" ->
+                                UserClearedInput
+
+                            _ ->
+                                NoOp
+                    )
                 ]
                 [ Html.inputText
                     (case model.value of
@@ -349,12 +370,37 @@ view model =
                                         ]
                                         [ liFocusManager { hasFocus = hasFocus }
                                             [ Html.Events.Extra.onKeyDown
-                                                [ ( "ArrowDown", UserPressedArrowDownKey )
-                                                , ( "ArrowUp", UserPressedArrowUpKey )
-                                                , ( "ArrowLeft", UserPressedArrowLeftKey )
-                                                , ( "ArrowRight", UserPressedArrowRightKey )
-                                                , ( "Escape", UserFocused Input )
-                                                ]
+                                                (\key ->
+                                                    case key of
+                                                        Just "ArrowDown" ->
+                                                            UserPressedArrowDownKey
+
+                                                        Just "ArrowUp" ->
+                                                            UserPressedArrowUpKey
+
+                                                        Just "ArrowLeft" ->
+                                                            UserPressedArrowLeftKey
+
+                                                        Just "ArrowRight" ->
+                                                            UserPressedArrowRightKey
+
+                                                        Just "Escape" ->
+                                                            UserFocused Input
+
+                                                        Just " " ->
+                                                            NoOp
+
+                                                        Just k ->
+                                                            case String.uncons k of
+                                                                Just ( char, "" ) ->
+                                                                    UserPressedPrintableCharacterKey char
+
+                                                                _ ->
+                                                                    NoOp
+
+                                                        _ ->
+                                                            NoOp
+                                                )
                                             ]
                                             [ Html.button
                                                 [ Attributes.class "outline-none w-full text-start p-2 focus:bg-neutral-700 focus:text-white active:bg-neutral-800 group-hover:not-hover:focus:bg-neutral-600 active:transition-colors hover:not-focus:bg-neutral-300"
@@ -362,10 +408,6 @@ view model =
                                                 , Events.onBlur (UserBlurred (Listbox { index = i }))
                                                 , Events.onFocus (UserFocused (Listbox { index = i }))
                                                 , Events.onClick (UserSelectedSuggestion suggestion)
-                                                , Html.Events.Extra.onKeyDown
-                                                    [ ( "Enter", UserSelectedSuggestion suggestion )
-                                                    , ( "Space", UserSelectedSuggestion suggestion )
-                                                    ]
                                                 ]
                                                 [ Html.div []
                                                     [ Html.text suggestion.name
