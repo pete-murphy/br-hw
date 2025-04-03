@@ -7,14 +7,14 @@ module Autocomplete exposing
     , view
     )
 
-import Accessibility as Html exposing (Attribute, Html)
+import Accessibility exposing (Attribute, Html)
 import Accessibility.Aria as Aria
 import Accessibility.Live as Live
 import Accessibility.Role as Role
 import Api.Mapbox as Mapbox
 import Cmd.Extra
 import Debouncer exposing (Debouncer)
-import Html as Html_
+import Html
 import Html.Attributes as Attributes
 import Html.Events as Events
 import Html.Events.Extra
@@ -326,7 +326,7 @@ view model =
     Html.div
         [ Attributes.class "grid gap-2 p-2 w-xs"
         ]
-        [ Html.labelBefore [ Attributes.class "grid gap-2 peer" ]
+        [ Accessibility.labelBefore [ Attributes.class "grid gap-2 peer" ]
             (Html.span
                 [ Attributes.class "text-sm font-semibold tracking-wide uppercase"
                 ]
@@ -353,7 +353,7 @@ view model =
                                 NoOp
                     )
                 ]
-                [ Html.inputText
+                [ Accessibility.inputText
                     (case model.value of
                         InputText search ->
                             search
@@ -489,7 +489,7 @@ liFocusManager :
     -> List (Html Msg)
     -> Html Msg
 liFocusManager props attributes =
-    Html_.node "li-focus-manager"
+    Html.node "li-focus-manager"
         ([ Attributes.attribute "has-focus"
             (if props.hasFocus then
                 "true"
@@ -515,7 +515,7 @@ inputFocusManager :
     -> List (Html Msg)
     -> Html Msg
 inputFocusManager props attributes =
-    Html_.node "input-focus-manager"
+    Html.node "input-focus-manager"
         ([ Attributes.attribute "has-focus"
             (if props.hasFocus then
                 "true"
