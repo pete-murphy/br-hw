@@ -132,7 +132,7 @@ update msg model =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions model =
+subscriptions _ =
     Sub.none
 
 
@@ -153,7 +153,22 @@ view model =
                 [ Attributes.class "text-neutral-950" ]
                 [ Html.map GotAutocompleteMsg
                     (Autocomplete.view okModel.autocomplete)
-                , Html.div []
-                    [ Html.text (Debug.toString okModel.selectedLocation)
-                    ]
+                , case okModel.selectedLocation of
+                    RemoteData.NotAsked ->
+                        Html.text ""
+
+                    RemoteData.Loading ->
+                        Html.div
+                            [ Attributes.class "text-neutral-700" ]
+                            [ Html.text "Loading..." ]
+
+                    RemoteData.Failure _ ->
+                        Html.div
+                            [ Attributes.class "text-red-500" ]
+                            [ Html.text "Something went wrong!" ]
+
+                    RemoteData.Success feature ->
+                        Html.div
+                            [ Attributes.class "" ]
+                            [ Html.text ("Success: " ++ Mapbox.name feature) ]
                 ]

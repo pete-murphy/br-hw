@@ -378,96 +378,100 @@ view model =
         , Html.div
             [ Role.listBox
             , Attributes.id listboxId
-            , Attributes.class "h-0 bg-white border border-solid shadow-md opacity-0 group transition-[height,_opacity] overflow-clip transition-discrete border-neutral-500"
-            , Attributes.classList
-                [ ( "opacity-100 h-[calc-size(auto,_size)]", isExpanded ) ]
+            , Attributes.class "relative w-fulll"
             ]
-            [ case model.searchResults of
-                Success [] ->
-                    Html.div [ Attributes.class "p-2" ]
-                        [ Html.text "No results found" ]
+            [ Html.div
+                [ Attributes.class "w-full absolute h-0 bg-white border border-solid shadow-md opacity-0 group transition-[height,_opacity] overflow-clip transition-discrete border-neutral-500"
+                , Attributes.classList
+                    [ ( "opacity-100 h-[calc-size(auto,_size)]", isExpanded ) ]
+                ]
+                [ case model.searchResults of
+                    Success [] ->
+                        Html.div [ Attributes.class "p-2" ]
+                            [ Html.text "No results found" ]
 
-                Success results ->
-                    Html.ul []
-                        (results
-                            |> List.indexedMap
-                                (\i suggestion ->
-                                    let
-                                        hasFocus =
-                                            model.focus == Listbox { index = i }
-                                    in
-                                    Html.li
-                                        [ Attributes.attribute "aria-selected"
-                                            (if hasFocus then
-                                                "true"
+                    Success results ->
+                        Html.ul []
+                            (results
+                                |> List.indexedMap
+                                    (\i suggestion ->
+                                        let
+                                            hasFocus =
+                                                model.focus == Listbox { index = i }
+                                        in
+                                        Html.li
+                                            [ Attributes.attribute "aria-selected"
+                                                (if hasFocus then
+                                                    "true"
 
-                                             else
-                                                "false"
-                                            )
-                                        ]
-                                        [ liFocusManager { hasFocus = hasFocus }
-                                            [ Html.Events.Extra.onKeyDown
-                                                (\key ->
-                                                    case key of
-                                                        Just "ArrowDown" ->
-                                                            UserPressedArrowDownKey
-
-                                                        Just "ArrowUp" ->
-                                                            UserPressedArrowUpKey
-
-                                                        Just "ArrowLeft" ->
-                                                            UserPressedArrowLeftKey
-
-                                                        Just "ArrowRight" ->
-                                                            UserPressedArrowRightKey
-
-                                                        Just "Escape" ->
-                                                            UserFocused Input
-
-                                                        Just " " ->
-                                                            NoOp
-
-                                                        Just k ->
-                                                            case String.uncons k of
-                                                                Just ( char, "" ) ->
-                                                                    UserPressedPrintableCharacterKey char
-
-                                                                _ ->
-                                                                    NoOp
-
-                                                        _ ->
-                                                            NoOp
+                                                 else
+                                                    "false"
                                                 )
                                             ]
-                                            [ Html.button
-                                                [ Attributes.class "p-2 w-full outline-none focus:text-white active:transition-colors text-start group-hover:not-hover:focus:bg-neutral-600 hover:not-focus:bg-neutral-300 focus:bg-neutral-700 active:bg-neutral-800"
-                                                , Attributes.tabindex -1
-                                                , Events.onBlur (UserBlurred (Listbox { index = i }))
-                                                , Events.onFocus (UserFocused (Listbox { index = i }))
-                                                , Events.onClick (UserSelectedSuggestion suggestion)
+                                            [ liFocusManager { hasFocus = hasFocus }
+                                                [ Html.Events.Extra.onKeyDown
+                                                    (\key ->
+                                                        case key of
+                                                            Just "ArrowDown" ->
+                                                                UserPressedArrowDownKey
+
+                                                            Just "ArrowUp" ->
+                                                                UserPressedArrowUpKey
+
+                                                            Just "ArrowLeft" ->
+                                                                UserPressedArrowLeftKey
+
+                                                            Just "ArrowRight" ->
+                                                                UserPressedArrowRightKey
+
+                                                            Just "Escape" ->
+                                                                UserFocused Input
+
+                                                            Just " " ->
+                                                                NoOp
+
+                                                            Just k ->
+                                                                case String.uncons k of
+                                                                    Just ( char, "" ) ->
+                                                                        UserPressedPrintableCharacterKey char
+
+                                                                    _ ->
+                                                                        NoOp
+
+                                                            _ ->
+                                                                NoOp
+                                                    )
                                                 ]
-                                                [ Html.div [ Attributes.class "line-clamp-1 text-ellipsis" ]
-                                                    [ Html.text (Mapbox.name suggestion) ]
-                                                , Html.div
-                                                    [ Attributes.class "line-clamp-1 text-ellipsis text-sm" ]
-                                                    [ Html.text (Mapbox.placeFormatted suggestion) ]
+                                                [ Html.button
+                                                    [ Attributes.class "p-2 w-full outline-none focus:text-white active:transition-colors text-start group-hover:not-hover:focus:bg-neutral-600 hover:not-focus:bg-neutral-300 focus:bg-neutral-700 active:bg-neutral-800"
+                                                    , Attributes.tabindex -1
+                                                    , Events.onBlur (UserBlurred (Listbox { index = i }))
+                                                    , Events.onFocus (UserFocused (Listbox { index = i }))
+                                                    , Events.onClick (UserSelectedSuggestion suggestion)
+                                                    ]
+                                                    [ Html.div [ Attributes.class "line-clamp-1 text-ellipsis" ]
+                                                        [ Html.text (Mapbox.name suggestion) ]
+                                                    , Html.div
+                                                        [ Attributes.class "line-clamp-1 text-ellipsis text-sm" ]
+                                                        [ Html.text (Mapbox.placeFormatted suggestion) ]
+                                                    ]
                                                 ]
                                             ]
-                                        ]
-                                )
-                        )
+                                    )
+                            )
 
-                Loading ->
-                    Html.div [ Attributes.class "p-2" ]
-                        [ Html.text "Loading..." ]
+                    Loading ->
+                        Html.div [ Attributes.class "p-2" ]
+                            [ Html.text "Loading..." ]
 
-                NotAsked ->
-                    Html.div [ Attributes.class "p-2 h-[1lh]" ]
-                        [ Html.text "" ]
+                    NotAsked ->
+                        Html.div [ Attributes.class "p-2 h-[1lh]" ]
+                            [ Html.text "" ]
 
-                Failure _ ->
-                    Html.div [ Attributes.class "p-2" ]
-                        [ Html.text "Something went wrong!" ]
+                    Failure _ ->
+                        Html.div [ Attributes.class "p-2" ]
+                            [ Html.text "Something went wrong!" ]
+                ]
             ]
         , Html.div
             [ Attributes.class "sr-only"
@@ -475,9 +479,6 @@ view model =
             , Role.status
             ]
             [-- TODO: Implement live region
-            ]
-        , Html.div [ Attributes.class "p-2 font-mono whitespace-pre-wrap break-all bg-neutral-50" ]
-            [ Html.text (Debug.toString model)
             ]
         ]
 
