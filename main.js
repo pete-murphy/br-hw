@@ -11,6 +11,24 @@ let app = Main.init({
   },
 });
 
+// Get the user's current position as soon as the app loads, and send it to Elm
+window.navigator.geolocation.getCurrentPosition(
+  (currentPosition) => {
+    app.ports.fromJs.send({
+      type: "CurrentPositionSuccess",
+      latitude: currentPosition.coords.latitude,
+      longitude: currentPosition.coords.longitude,
+    });
+  },
+  (error) => {
+    app.ports.fromJs.send({
+      type: "CurrentPositionError",
+      error: error.message,
+    });
+  }
+);
+
+// Mapbox GL custom element
 customElements.define(
   "mapbox-gl",
   class extends HTMLElement {
@@ -28,6 +46,8 @@ customElements.define(
         center: [0, 0],
         zoom: 2,
         accessToken: mapboxAccessToken,
+        maxZoom: 16,
+        minZoom: 2,
       });
 
       this.map.on("load", () => {
@@ -73,16 +93,19 @@ customElements.define(
     attributeChangedCallback(name, _, newValue) {
       if (name === "center") {
         const center = JSON.parse(newValue);
-        this.map.flyTo({
-          center: [center.longitude, center.latitude],
-          zoom: 14,
-          essential: true,
-        });
+        if (center.latitude && center.longitude) {
+          this.map.flyTo({
+            center: [center.longitude, center.latitude],
+            zoom: 8,
+            essential: true,
+          });
+        }
       }
     }
   }
 );
 
+// Custom element for managing focus of list item in the combobox listbox
 customElements.define(
   "li-focus-manager",
   class extends HTMLElement {
@@ -124,6 +147,7 @@ customElements.define(
   }
 );
 
+// Custom element for managing focus of combobox input
 customElements.define(
   "input-focus-manager",
   class extends HTMLElement {

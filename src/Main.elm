@@ -1,5 +1,6 @@
-module Main exposing (main)
+port module Main exposing (main)
 
+import Api.Coordinates as Coordinates exposing (Coordinates)
 import Api.Mapbox as Mapbox
 import Autocomplete
 import Browser
@@ -10,7 +11,9 @@ import Json.Decode as Decode
 import Json.Decode.Pipeline as Pipeline
 import Json.Encode
 import MapboxGl
-import RemoteData exposing (WebData)
+import Maybe.Extra
+import RemoteData exposing (RemoteData, WebData)
+import Result.Extra
 
 
 
@@ -40,6 +43,7 @@ type alias OkModel =
     , mapboxAccessToken : String
     , mapboxSessionToken : String
     , selectedLocation : WebData (Mapbox.Feature Mapbox.Retrieved)
+    , userCurrentPosition : RemoteData String Coordinates
     }
 
 
@@ -65,6 +69,7 @@ init flags =
                 , mapboxAccessToken = okFlags.mapboxAccessToken
                 , mapboxSessionToken = okFlags.mapboxSessionToken
                 , selectedLocation = RemoteData.NotAsked
+                , userCurrentPosition = RemoteData.NotAsked
                 }
             , Cmd.none
             )
@@ -83,6 +88,7 @@ type Msg
     = NoOp
     | ApiRespondedWithRetrievedFeature (Result Http.Error (Mapbox.Feature Mapbox.Retrieved))
     | GotAutocompleteMsg Autocomplete.Msg
+    | JsSentUserCurrentPosition (Result String Coordinates)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -131,10 +137,39 @@ update msg model =
                     , Cmd.none
                     )
 
+                JsSentUserCurrentPosition result ->
+                    ( Ok { okModel | userCurrentPosition = RemoteData.fromResult result }
+                    , Cmd.none
+                    )
+
+
+
+-- SUBSCRIPTIONS
+
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.none
+    fromJs
+        (Decode.decodeValue
+            (Decode.field "type" Decode.string
+                |> Decode.andThen
+                    (\str ->
+                        case str of
+                            "CurrentPositionSuccess" ->
+                                Decode.map Ok Coordinates.decoder
+
+                            "CurrentPositionError" ->
+                                Decode.map Err (Decode.field "error" Decode.string)
+
+                            _ ->
+                                Decode.fail "Unexpected type"
+                    )
+            )
+            >> Result.Extra.unpack (\_ -> NoOp) JsSentUserCurrentPosition
+        )
+
+
+port fromJs : (Json.Encode.Value -> msg) -> Sub msg
 
 
 
@@ -179,6 +214,7 @@ view model =
                         { center =
                             RemoteData.toMaybe okModel.selectedLocation
                                 |> Maybe.map Mapbox.coordinates
+                                |> Maybe.Extra.or (RemoteData.toMaybe okModel.userCurrentPosition)
                                 |> Maybe.withDefault { latitude = 0, longitude = 0 }
                         }
                     ]
