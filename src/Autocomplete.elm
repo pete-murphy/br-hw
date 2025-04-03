@@ -289,7 +289,7 @@ view_ model =
         , Html.ul
             [ Role.listBox
             , Attributes.id listboxId
-            , Attributes.class "opacity-0 h-0 transition-[height,_opacity]  overflow-clip transition-discrete border border-neutral-500 border-solid bg-white shadow-md"
+            , Attributes.class "group opacity-0 h-0 transition-[height,_opacity]  overflow-clip transition-discrete border border-neutral-500 border-solid bg-white shadow-md"
             , Attributes.classList
                 [ ( "h-[calc-size(auto,_size)] opacity-100", isExpanded ) ]
             ]
@@ -312,7 +312,7 @@ view_ model =
                             [ focusWithin hasFocus
                                 []
                                 [ Html.button
-                                    [ Attributes.class "w-full text-start p-2 focus:bg-accent-600 focus:text-white active:bg-accent-900 active:transition-colors  hover:bg-accent-600 hover:text-white outline-none"
+                                    [ Attributes.class "outline-none w-full text-start p-2 focus:bg-neutral-700 focus:text-white active:bg-neutral-800 group-hover:not-hover:focus:bg-neutral-600 active:transition-colors hover:not-focus:bg-neutral-300"
                                     , Attributes.tabindex -1
                                     , Events.onBlur (UserBlurred (Listbox { index = i }))
                                     , Events.onFocus (UserFocused (Listbox { index = i }))
@@ -321,8 +321,6 @@ view_ model =
                                         [ ( "Enter", UserSelected location )
                                         , ( "Space", UserSelected location )
                                         ]
-
-                                    -- , Events.onClick (UserClicked (Listbox { index = i }))
                                     ]
                                     [ Html.text location.name ]
                                 ]
