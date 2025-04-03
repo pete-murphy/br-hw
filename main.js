@@ -18,6 +18,14 @@ customElements.define(
       super();
     }
 
+    connectedCallback() {
+      this.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+          e.preventDefault();
+        }
+      });
+    }
+
     attributeChangedCallback(name, _, newValue) {
       if (name === "has-focus") {
         if (newValue == "true") {
@@ -53,6 +61,11 @@ customElements.define(
     }
 
     connectedCallback() {
+      this.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+          e.preventDefault();
+        }
+      });
       this.firstElementChild.addEventListener("selectionchange", (e) => {
         const start = this.firstElementChild.selectionStart;
         const end = this.firstElementChild.selectionEnd;
