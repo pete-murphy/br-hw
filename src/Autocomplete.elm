@@ -378,7 +378,7 @@ view model =
         , Html.div
             [ Role.listBox
             , Attributes.id listboxId
-            , Attributes.class "relative w-fulll"
+            , Attributes.class "relative z-10 w-full"
             ]
             [ Html.div
                 [ Attributes.class "absolute w-full h-0 bg-white border border-gray-500 border-solid shadow-md opacity-0 group transition-[height,_opacity] overflow-clip transition-discrete"

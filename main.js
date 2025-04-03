@@ -1,5 +1,6 @@
 import Main from "./src/Main.elm";
 import MapboxGL from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 
 const mapboxAccessToken = import.meta.env.VITE_APP_MAPBOX_ACCESS_TOKEN;
 let app = Main.init({
@@ -14,7 +15,7 @@ customElements.define(
   "mapbox-gl",
   class extends HTMLElement {
     static get observedAttributes() {
-      return ["coordinates"];
+      return ["center"];
     }
     constructor() {
       super();
@@ -31,12 +32,12 @@ customElements.define(
 
       this.map.on("load", () => {
         this.dispatchEvent(
-          new CustomEvent("ready", {
+          new CustomEvent("load", {
             bubbles: true,
             composed: true,
             detail: {
               center: this.map.getCenter(),
-              bbox: this.map.getBounds(),
+              bounds: this.map.getBounds(),
             },
           })
         );
@@ -44,12 +45,25 @@ customElements.define(
 
       this.map.on("moveend", () => {
         this.dispatchEvent(
-          new CustomEvent("moved", {
+          new CustomEvent("moveend", {
             bubbles: true,
             composed: true,
             detail: {
               center: this.map.getCenter(),
-              bbox: this.map.getBounds(),
+              bounds: this.map.getBounds(),
+            },
+          })
+        );
+      });
+
+      this.map.on("zoomend", () => {
+        this.dispatchEvent(
+          new CustomEvent("zoomend", {
+            bubbles: true,
+            composed: true,
+            detail: {
+              center: this.map.getCenter(),
+              bounds: this.map.getBounds(),
             },
           })
         );
@@ -57,10 +71,10 @@ customElements.define(
     }
 
     attributeChangedCallback(name, _, newValue) {
-      if (name === "coordinates") {
-        const coordinates = JSON.parse(newValue);
+      if (name === "center") {
+        const center = JSON.parse(newValue);
         this.map.flyTo({
-          center: [coordinates.longitude, coordinates.latitude],
+          center: [center.longitude, center.latitude],
           zoom: 14,
           essential: true,
         });

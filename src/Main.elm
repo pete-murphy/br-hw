@@ -174,7 +174,7 @@ view model =
                                 [ Attributes.class "" ]
                                 [ Html.text ("Success: " ++ Mapbox.name feature) ]
                     ]
-                , Html.div []
+                , Html.div [ Attributes.class "w-full h-96" ]
                     [ MapboxGl.view
                         { center =
                             RemoteData.toMaybe okModel.selectedLocation
