@@ -1,13 +1,15 @@
 module Main exposing (main)
 
-import Api.Mapbox exposing (Suggestion)
+import Api.Mapbox as Mapbox
 import Autocomplete
 import Browser
 import Html exposing (..)
 import Html.Attributes as Attributes
+import Http
 import Json.Decode as Decode
 import Json.Decode.Pipeline as Pipeline
 import Json.Encode
+import RemoteData exposing (WebData)
 
 
 
@@ -36,6 +38,7 @@ type alias OkModel =
     { autocomplete : Autocomplete.Model
     , mapboxAccessToken : String
     , mapboxSessionToken : String
+    , selectedLocation : WebData (Mapbox.Feature Mapbox.Retrieved)
     }
 
 
@@ -60,6 +63,7 @@ init flags =
                 { autocomplete = Autocomplete.init
                 , mapboxAccessToken = okFlags.mapboxAccessToken
                 , mapboxSessionToken = okFlags.mapboxSessionToken
+                , selectedLocation = RemoteData.NotAsked
                 }
             , Cmd.none
             )
@@ -76,6 +80,7 @@ init flags =
 
 type Msg
     = NoOp
+    | ApiRespondedWithRetrievedFeature (Result Http.Error (Mapbox.Feature Mapbox.Retrieved))
     | GotAutocompleteMsg Autocomplete.Msg
 
 
@@ -103,21 +108,27 @@ update msg model =
                             , Cmd.map GotAutocompleteMsg cmd
                             )
 
-                        Just (Autocomplete.OutMsgUserSelectedSuggestion location) ->
-                            ( Ok { okModel | autocomplete = autocomplete }
+                        Just (Autocomplete.OutMsgUserSelectedSuggestion suggestion) ->
+                            ( Ok
+                                { okModel
+                                    | autocomplete = autocomplete
+                                    , selectedLocation = RemoteData.Loading
+                                }
                             , Cmd.batch
                                 [ Cmd.map GotAutocompleteMsg cmd
-                                , getLocation location
+                                , Mapbox.retrieveSuggestion
+                                    { mapboxAccessToken = okModel.mapboxAccessToken
+                                    , mapboxSessionToken = okModel.mapboxSessionToken
+                                    , mapboxId = Mapbox.mapboxId suggestion
+                                    }
+                                    ApiRespondedWithRetrievedFeature
                                 ]
                             )
 
-
-getLocation : Suggestion -> Cmd Msg
-getLocation suggestion =
-    -- Here you would implement the logic to get the location
-    -- For example, you could use a Cmd to make an HTTP request
-    -- to a geolocation API or similar.
-    Cmd.none
+                ApiRespondedWithRetrievedFeature result ->
+                    ( Ok { okModel | selectedLocation = RemoteData.fromResult result }
+                    , Cmd.none
+                    )
 
 
 subscriptions : Model -> Sub Msg
@@ -140,7 +151,9 @@ view model =
         Ok okModel ->
             Html.div
                 [ Attributes.class "text-neutral-950" ]
-                [ Html.text "Hello, World!"
-                , Html.map GotAutocompleteMsg
+                [ Html.map GotAutocompleteMsg
                     (Autocomplete.view okModel.autocomplete)
+                , Html.div []
+                    [ Html.text (Debug.toString okModel.selectedLocation)
+                    ]
                 ]

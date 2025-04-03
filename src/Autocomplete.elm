@@ -64,7 +64,7 @@ decrementFocus focus =
 
 type Value
     = InputText String
-    | SelectedSuggestion Mapbox.Suggestion
+    | SelectedSuggestion (Mapbox.Feature Mapbox.Suggestion)
 
 
 type CursorAction
@@ -78,7 +78,7 @@ type CursorAction
 
 type alias Model =
     { value : Value
-    , searchResults : WebData (List Mapbox.Suggestion)
+    , searchResults : WebData (List (Mapbox.Feature Mapbox.Suggestion))
     , pendingRequestId : Maybe String
     , debouncer : Debouncer String
     , focus : Focus
@@ -112,10 +112,10 @@ type Msg
     | UserPressedArrowDownKey
     | UserPressedArrowLeftKey
     | UserPressedArrowRightKey
-    | UserSelectedSuggestion Mapbox.Suggestion
+    | UserSelectedSuggestion (Mapbox.Feature Mapbox.Suggestion)
     | UserClearedInput
     | UserPressedPrintableCharacterKey Char
-    | ApiRespondedSuggestions String (Result Http.Error (List Mapbox.Suggestion))
+    | ApiRespondedWithSuggestions String (Result Http.Error (List (Mapbox.Feature Mapbox.Suggestion)))
       -- Imperative
     | ResetCursorAction
     | AttemptBlur Focus
@@ -123,7 +123,7 @@ type Msg
 
 
 type OutMsg
-    = OutMsgUserSelectedSuggestion Mapbox.Suggestion
+    = OutMsgUserSelectedSuggestion (Mapbox.Feature Mapbox.Suggestion)
 
 
 update :
@@ -166,7 +166,13 @@ update params msg model =
 
                         _ ->
                             Loading
-                , pendingRequestId = Just search
+                , pendingRequestId =
+                    case search of
+                        "" ->
+                            Nothing
+
+                        _ ->
+                            Just search
               }
             , if search == "" then
                 cancelPendingSearch
@@ -177,7 +183,7 @@ update params msg model =
                     , mapboxSessionToken = params.mapboxSessionToken
                     , query = search
                     }
-                    (ApiRespondedSuggestions search)
+                    (ApiRespondedWithSuggestions search)
             , Nothing
             )
 
@@ -241,7 +247,7 @@ update params msg model =
             , Nothing
             )
 
-        ApiRespondedSuggestions searchTerm result ->
+        ApiRespondedWithSuggestions searchTerm result ->
             ( if model.pendingRequestId == Just searchTerm then
                 { model | searchResults = RemoteData.fromResult result }
 
@@ -353,7 +359,7 @@ view model =
                             search
 
                         SelectedSuggestion suggestion ->
-                            suggestion.name
+                            Mapbox.name suggestion
                     )
                     [ Aria.owns [ listboxId ]
                     , Aria.autoCompleteList
@@ -441,9 +447,10 @@ view model =
                                                 , Events.onClick (UserSelectedSuggestion suggestion)
                                                 ]
                                                 [ Html.div [ Attributes.class "line-clamp-1 text-ellipsis" ]
-                                                    [ Html.text suggestion.name ]
-                                                , Html.div [ Attributes.class "line-clamp-1 text-ellipsis text-sm" ]
-                                                    [ Html.text suggestion.placeFormatted ]
+                                                    [ Html.text (Mapbox.name suggestion) ]
+                                                , Html.div
+                                                    [ Attributes.class "line-clamp-1 text-ellipsis text-sm" ]
+                                                    [ Html.text (Mapbox.placeFormatted suggestion) ]
                                                 ]
                                             ]
                                         ]

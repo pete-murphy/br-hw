@@ -1,4 +1,45 @@
-module Api.Mapbox exposing (Suggestion, getSuggestions)
+module Api.Mapbox exposing
+    ( Feature
+    , Retrieved
+    , Suggestion
+    , address
+    , coordinates
+    , fullAddress
+    , mapboxId
+    , maybePlaceFormatted
+    , name
+    , placeFormatted
+    , getSuggestions
+    , retrieveSuggestion
+    )
+
+{-|
+
+
+# TYPES
+
+@docs Feature
+@docs Retrieved
+@docs Suggestion
+
+
+# GETTERS
+
+@docs address
+@docs coordinates
+@docs fullAddress
+@docs mapboxId
+@docs maybePlaceFormatted
+@docs name
+@docs placeFormatted
+
+
+# HTTP
+
+@docs getSuggestions
+@docs retrieveSuggestion
+
+-}
 
 import Http
 import Json.Decode
@@ -6,30 +47,125 @@ import Json.Decode.Pipeline as Pipeline
 import Url.Builder exposing (QueryParameter(..))
 
 
-type alias Suggestion =
+type Feature a
+    = Feature Internals a
+
+
+type alias Internals =
     { name : String
     , mapboxId : String
     , address : Maybe String
     , fullAddress : Maybe String
-    , placeFormatted : String
     }
+
+
+type alias Suggestion =
+    { placeFormatted : String }
+
+
+type alias Retrieved =
+    { coordinates : Coordinates
+    , placeFormatted : Maybe String
+    }
+
+
+type alias Coordinates =
+    { latitude : Float
+    , longitude : Float
+    }
+
+
+
+-- GETTERS
+
+
+name : Feature a -> String
+name (Feature internals _) =
+    internals.name
+
+
+mapboxId : Feature a -> String
+mapboxId (Feature internals _) =
+    internals.mapboxId
+
+
+address : Feature a -> Maybe String
+address (Feature internals _) =
+    internals.address
+
+
+fullAddress : Feature a -> Maybe String
+fullAddress (Feature internals _) =
+    internals.fullAddress
+
+
+placeFormatted : Feature Suggestion -> String
+placeFormatted (Feature _ suggestion) =
+    suggestion.placeFormatted
+
+
+maybePlaceFormatted : Feature Retrieved -> Maybe String
+maybePlaceFormatted (Feature _ suggestion) =
+    suggestion.placeFormatted
+
+
+coordinates : Feature Retrieved -> Coordinates
+coordinates (Feature _ suggestion) =
+    suggestion.coordinates
+
+
+
+-- DECODERS
+
+
+internalsDecoder : Json.Decode.Decoder Internals
+internalsDecoder =
+    Json.Decode.succeed Internals
+        |> Pipeline.required "name" Json.Decode.string
+        |> Pipeline.required "mapbox_id" Json.Decode.string
+        |> Pipeline.optional "address" (Json.Decode.nullable Json.Decode.string) Nothing
+        |> Pipeline.optional "full_address" (Json.Decode.nullable Json.Decode.string) Nothing
 
 
 suggestionDecoder : Json.Decode.Decoder Suggestion
 suggestionDecoder =
     Json.Decode.succeed Suggestion
-        |> Pipeline.required "name" Json.Decode.string
-        |> Pipeline.required "mapbox_id" Json.Decode.string
-        |> Pipeline.optional "address" (Json.Decode.nullable Json.Decode.string) Nothing
-        |> Pipeline.optional "full_address" (Json.Decode.nullable Json.Decode.string) Nothing
         |> Pipeline.required "place_formatted" Json.Decode.string
 
 
-responseDecoder : Json.Decode.Decoder (List Suggestion)
-responseDecoder =
-    Json.Decode.field "suggestions" (Json.Decode.list suggestionDecoder)
+suggestionFeatureDecoder : Json.Decode.Decoder (Feature Suggestion)
+suggestionFeatureDecoder =
+    Json.Decode.succeed Feature
+        |> Pipeline.custom internalsDecoder
+        |> Pipeline.custom suggestionDecoder
 
 
+coordinatesDecoder : Json.Decode.Decoder Coordinates
+coordinatesDecoder =
+    Json.Decode.succeed Coordinates
+        |> Pipeline.required "latitude" Json.Decode.float
+        |> Pipeline.required "longitude" Json.Decode.float
+
+
+retrievedDecoder : Json.Decode.Decoder Retrieved
+retrievedDecoder =
+    Json.Decode.succeed Retrieved
+        |> Pipeline.required "coordinates" coordinatesDecoder
+        |> Pipeline.optional "place_formatted" (Json.Decode.nullable Json.Decode.string) Nothing
+
+
+retrievedFeatureDecoder : Json.Decode.Decoder (Feature Retrieved)
+retrievedFeatureDecoder =
+    Json.Decode.succeed Feature
+        |> Pipeline.custom internalsDecoder
+        |> Pipeline.custom retrievedDecoder
+
+
+
+-- HTTP
+
+
+builder : List String -> List QueryParameter -> String
 builder =
     Url.Builder.crossOrigin "https://api.mapbox.com"
 
@@ -39,14 +175,17 @@ getSuggestions :
     , mapboxSessionToken : String
     , query : String
     }
-    -> (Result Http.Error (List Suggestion) -> msg)
+    -> (Result Http.Error (List (Feature Suggestion)) -> msg)
     -> Cmd msg
 getSuggestions params mkMsg =
+    let
+        responseDecoder : Json.Decode.Decoder (List (Feature Suggestion))
+        responseDecoder =
+            Json.Decode.field "suggestions" (Json.Decode.list suggestionFeatureDecoder)
+    in
     Http.request
         { method = "GET"
-        , headers =
-            [ Http.header "Content-Type" "application/json"
-            ]
+        , headers = []
         , url =
             builder
                 [ "search"
@@ -56,7 +195,6 @@ getSuggestions params mkMsg =
                 ]
                 [ Url.Builder.string "q" params.query
                 , Url.Builder.string "limit" "10"
-                , Url.Builder.string "language" "en"
                 , Url.Builder.string "session_token" params.mapboxSessionToken
                 , Url.Builder.string "access_token" params.mapboxAccessToken
                 , Url.Builder.string "types" "country,region,postcode,district,place,city,locality,neighborhood,street,address"
@@ -69,178 +207,46 @@ getSuggestions params mkMsg =
         }
 
 
-responseJson : String
-responseJson =
-    """
-{
-  "suggestions": [
-    {
-      "name": "East Broadway",
-      "mapbox_id": "dXJuOm1ieGFkci1zdHI6MjRhY2RkMTktMTRjMi00OTUzLTlhZmItZmVkN2M5ZDQ1MDU4",
-      "feature_type": "street",
-      "place_formatted": "South Boston, Massachusetts 02127, United States",
-      "context": {
-        "country": {
-          "id": "dXJuOm1ieHBsYzpJdXc",
-          "name": "United States",
-          "country_code": "US",
-          "country_code_alpha_3": "USA"
-        },
-        "region": {
-          "id": "dXJuOm1ieHBsYzpCV1Rz",
-          "name": "Massachusetts",
-          "region_code": "MA",
-          "region_code_full": "US-MA"
-        },
-        "postcode": { "id": "dXJuOm1ieHBsYzpOdzdz", "name": "02127" },
-        "district": {
-          "id": "dXJuOm1ieHBsYzpBVk9tN0E",
-          "name": "Suffolk County"
-        },
-        "place": { "id": "dXJuOm1ieHBsYzpFbFdvN0E", "name": "South Boston" },
-        "street": {
-          "id": "dXJuOm1ieGFkci1zdHI6MjRhY2RkMTktMTRjMi00OTUzLTlhZmItZmVkN2M5ZDQ1MDU4",
-          "name": "East Broadway"
-        }
-      },
-      "language": "en",
-      "maki": "marker",
-      "metadata": {},
-      "distance": 23815
-    },
-    {
-      "name": "East Broadway",
-      "mapbox_id": "dXJuOm1ieGFkci1zdHI6NTdjOGYwNjYtNjFjYS00MTRjLThhODQtNjhjMTZkODk2M2M1",
-      "feature_type": "street",
-      "place_formatted": "Haverhill, Massachusetts 01830, United States",
-      "context": {
-        "country": {
-          "id": "dXJuOm1ieHBsYzpJdXc",
-          "name": "United States",
-          "country_code": "US",
-          "country_code_alpha_3": "USA"
-        },
-        "region": {
-          "id": "dXJuOm1ieHBsYzpCV1Rz",
-          "name": "Massachusetts",
-          "region_code": "MA",
-          "region_code_full": "US-MA"
-        },
-        "postcode": { "id": "dXJuOm1ieHBsYzpKdTdz", "name": "01830" },
-        "district": { "id": "dXJuOm1ieHBsYzpieWJz", "name": "Essex County" },
-        "place": { "id": "dXJuOm1ieHBsYzpDSS9JN0E", "name": "Haverhill" },
-        "street": {
-          "id": "dXJuOm1ieGFkci1zdHI6NTdjOGYwNjYtNjFjYS00MTRjLThhODQtNjhjMTZkODk2M2M1",
-          "name": "East Broadway"
-        }
-      },
-      "language": "en",
-      "maki": "marker",
-      "metadata": {},
-      "distance": 52208
-    },
-    {
-      "name": "East Broadway",
-      "mapbox_id": "dXJuOm1ieGFkci1zdHI6ZTQ2YWIwM2YtOWRkZC00ZGYxLWIzZDMtMTNjOTc0OTI3NDhl",
-      "feature_type": "street",
-      "place_formatted": "Taunton, Massachusetts 02780, United States",
-      "context": {
-        "country": {
-          "id": "dXJuOm1ieHBsYzpJdXc",
-          "name": "United States",
-          "country_code": "US",
-          "country_code_alpha_3": "USA"
-        },
-        "region": {
-          "id": "dXJuOm1ieHBsYzpCV1Rz",
-          "name": "Massachusetts",
-          "region_code": "MA",
-          "region_code_full": "US-MA"
-        },
-        "postcode": { "id": "dXJuOm1ieHBsYzpWazdz", "name": "02780" },
-        "district": { "id": "dXJuOm1ieHBsYzpJa2Jz", "name": "Bristol County" },
-        "place": { "id": "dXJuOm1ieHBsYzpFMGNJN0E", "name": "Taunton" },
-        "street": {
-          "id": "dXJuOm1ieGFkci1zdHI6ZTQ2YWIwM2YtOWRkZC00ZGYxLWIzZDMtMTNjOTc0OTI3NDhl",
-          "name": "East Broadway"
-        }
-      },
-      "language": "en",
-      "maki": "marker",
-      "metadata": {},
-      "distance": 58016
-    },
-    {
-      "name": "E Broadway",
-      "mapbox_id": "dXJuOm1ieGFkci1zdHI6NjZlMjUyN2QtMzVmMS00NjA5LTkzZWQtZWRmZmEwMDlkNGM1",
-      "feature_type": "street",
-      "place_formatted": "Attleboro, Massachusetts 02780, United States",
-      "context": {
-        "country": {
-          "id": "dXJuOm1ieHBsYzpJdXc",
-          "name": "United States",
-          "country_code": "US",
-          "country_code_alpha_3": "USA"
-        },
-        "region": {
-          "id": "dXJuOm1ieHBsYzpCV1Rz",
-          "name": "Massachusetts",
-          "region_code": "MA",
-          "region_code_full": "US-MA"
-        },
-        "postcode": { "id": "dXJuOm1ieHBsYzpWazdz", "name": "02780" },
-        "district": { "id": "dXJuOm1ieHBsYzpJa2Jz", "name": "Bristol County" },
-        "place": { "id": "dXJuOm1ieHBsYzoxZ2pz", "name": "Attleboro" },
-        "street": {
-          "id": "dXJuOm1ieGFkci1zdHI6NjZlMjUyN2QtMzVmMS00NjA5LTkzZWQtZWRmZmEwMDlkNGM1",
-          "name": "E Broadway"
-        }
-      },
-      "language": "en",
-      "maki": "marker",
-      "metadata": {},
-      "distance": 63525
-    },
-    {
-      "name": "East Broadway",
-      "mapbox_id": "dXJuOm1ieGFkci1zdHI6OTU5MmRjMDMtYTA5OC00Mzc5LWJhZGUtNzMxNzc4MGQ5NGZk",
-      "feature_type": "street",
-      "place_formatted": "Salem, New Hampshire 03079, United States",
-      "context": {
-        "country": {
-          "id": "dXJuOm1ieHBsYzpJdXc",
-          "name": "United States",
-          "country_code": "US",
-          "country_code_alpha_3": "USA"
-        },
-        "region": {
-          "id": "dXJuOm1ieHBsYzpCVVRz",
-          "name": "New Hampshire",
-          "region_code": "NH",
-          "region_code_full": "US-NH"
-        },
-        "postcode": { "id": "dXJuOm1ieHBsYzpaZzdz", "name": "03079" },
-        "district": {
-          "id": "dXJuOm1ieHBsYzpBVExHN0E",
-          "name": "Rockingham County"
-        },
-        "place": { "id": "dXJuOm1ieHBsYzpFVStvN0E", "name": "Salem" },
-        "neighborhood": {
-          "id": "dXJuOm1ieHBsYzovT3pz",
-          "name": "Arlington Park"
-        },
-        "street": {
-          "id": "dXJuOm1ieGFkci1zdHI6OTU5MmRjMDMtYTA5OC00Mzc5LWJhZGUtNzMxNzc4MGQ5NGZk",
-          "name": "East Broadway"
-        }
-      },
-      "language": "en",
-      "maki": "marker",
-      "metadata": {},
-      "distance": 65226
+retrieveSuggestion :
+    { mapboxAccessToken : String
+    , mapboxSessionToken : String
+    , mapboxId : String
     }
-  ],
-  "attribution": "© 2025 Mapbox and its suppliers. All rights reserved. Use of this data is subject to the Mapbox Terms of Service. (https://www.mapbox.com/about/maps/)",
-  "response_id": "dvCsu_xXi66rMTotPSVuv-BpZZ9hSm0IUTDrnXFEl9dA61bLuf1DKjx5YZdJ419ks11ZfQ6BJCvnqvXexmdXj5o4SxKo1U4T4mmQ"
-}
-"""
+    -> (Result Http.Error (Feature Retrieved) -> msg)
+    -> Cmd msg
+retrieveSuggestion params mkMsg =
+    let
+        responseDecoder : Json.Decode.Decoder (Feature Retrieved)
+        responseDecoder =
+            Json.Decode.field "features"
+                (Json.Decode.list (Json.Decode.field "properties" retrievedFeatureDecoder))
+                |> Json.Decode.andThen
+                    (\list ->
+                        case list of
+                            retrievedFeature :: _ ->
+                                Json.Decode.succeed retrievedFeature
+
+                            _ ->
+                                Json.Decode.fail "Expected at least one feature"
+                    )
+    in
+    Http.request
+        { method = "GET"
+        , headers = []
+        , url =
+            builder
+                [ "search"
+                , "searchbox"
+                , "v1"
+                , "retrieve"
+                , params.mapboxId
+                ]
+                [ Url.Builder.string "session_token" params.mapboxSessionToken
+                , Url.Builder.string "access_token" params.mapboxAccessToken
+                ]
+        , body = Http.emptyBody
+        , tracker = Nothing
+        , timeout = Nothing
+        , expect =
+            Http.expectJson mkMsg responseDecoder
+        }
