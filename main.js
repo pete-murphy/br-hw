@@ -58,11 +58,13 @@ customElements.define(
 
     attributeChangedCallback(name, _, newValue) {
       if (name === "has-focus") {
-        if (newValue == "true") {
-          this.firstElementChild.focus();
-        } else {
-          this.firstElementChild?.blur();
-        }
+        window.requestAnimationFrame(() => {
+          if (newValue == "true") {
+            this.firstElementChild.focus();
+          } else {
+            this.firstElementChild?.blur();
+          }
+        });
       }
       if (name === "cursor-action") {
         const start =
