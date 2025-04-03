@@ -3,7 +3,7 @@ module Main exposing (main)
 import Api.Mapbox as Mapbox
 import Autocomplete
 import Browser
-import Html exposing (..)
+import Html exposing (Html)
 import Html.Attributes as Attributes
 import Http
 import Json.Decode as Decode
@@ -149,26 +149,39 @@ view model =
                 [ Html.text ("Error: " ++ Decode.errorToString err) ]
 
         Ok okModel ->
-            Html.div
-                [ Attributes.class "text-neutral-950" ]
-                [ Html.map GotAutocompleteMsg
-                    (Autocomplete.view okModel.autocomplete)
-                , case okModel.selectedLocation of
-                    RemoteData.NotAsked ->
-                        Html.text ""
+            Html.div []
+                [ Html.div
+                    [ Attributes.class "text-neutral-950" ]
+                    [ Html.map GotAutocompleteMsg
+                        (Autocomplete.view okModel.autocomplete)
+                    , case okModel.selectedLocation of
+                        RemoteData.NotAsked ->
+                            Html.text ""
 
-                    RemoteData.Loading ->
-                        Html.div
-                            [ Attributes.class "text-neutral-700" ]
-                            [ Html.text "Loading..." ]
+                        RemoteData.Loading ->
+                            Html.div
+                                [ Attributes.class "text-neutral-700" ]
+                                [ Html.text "Loading..." ]
 
-                    RemoteData.Failure _ ->
-                        Html.div
-                            [ Attributes.class "text-red-500" ]
-                            [ Html.text "Something went wrong!" ]
+                        RemoteData.Failure _ ->
+                            Html.div
+                                [ Attributes.class "text-red-500" ]
+                                [ Html.text "Something went wrong!" ]
 
-                    RemoteData.Success feature ->
-                        Html.div
-                            [ Attributes.class "" ]
-                            [ Html.text ("Success: " ++ Mapbox.name feature) ]
+                        RemoteData.Success feature ->
+                            Html.div
+                                [ Attributes.class "" ]
+                                [ Html.text ("Success: " ++ Mapbox.name feature) ]
+                    ]
+                , Html.div []
+                    [ Html.node "mapbox-gl"
+                        [ case okModel.selectedLocation of
+                            RemoteData.Success feature ->
+                                Mapbox.coordinatesAttribute feature
+
+                            _ ->
+                                Attributes.class ""
+                        ]
+                        []
+                    ]
                 ]

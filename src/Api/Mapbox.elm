@@ -9,6 +9,7 @@ module Api.Mapbox exposing
     , maybePlaceFormatted
     , name
     , placeFormatted
+    , coordinatesAttribute
     , getSuggestions
     , retrieveSuggestion
     )
@@ -34,6 +35,11 @@ module Api.Mapbox exposing
 @docs placeFormatted
 
 
+# HTML
+
+@docs coordinatesAttribute
+
+
 # HTTP
 
 @docs getSuggestions
@@ -41,9 +47,12 @@ module Api.Mapbox exposing
 
 -}
 
+import Html exposing (Attribute)
+import Html.Attributes
 import Http
 import Json.Decode
 import Json.Decode.Pipeline as Pipeline
+import Json.Encode
 import Url.Builder exposing (QueryParameter(..))
 
 
@@ -159,6 +168,24 @@ retrievedFeatureDecoder =
     Json.Decode.succeed Feature
         |> Pipeline.custom internalsDecoder
         |> Pipeline.custom retrievedDecoder
+
+
+
+-- HTML
+
+
+coordinatesAttribute : Feature Retrieved -> Attribute msg
+coordinatesAttribute (Feature _ retrieved) =
+    let
+        json =
+            Json.Encode.encode 0
+                (Json.Encode.object
+                    [ ( "latitude", Json.Encode.float retrieved.coordinates.latitude )
+                    , ( "longitude", Json.Encode.float retrieved.coordinates.longitude )
+                    ]
+                )
+    in
+    Html.Attributes.attribute "coordinates" json
 
 
 

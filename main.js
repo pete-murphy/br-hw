@@ -1,12 +1,56 @@
 import Main from "./src/Main.elm";
+import MapboxGL from "mapbox-gl";
 
+const mapboxAccessToken = import.meta.env.VITE_APP_MAPBOX_ACCESS_TOKEN;
 let app = Main.init({
   node: document.getElementById("app"),
   flags: {
-    mapboxAccessToken: import.meta.env.VITE_APP_MAPBOX_ACCESS_TOKEN,
+    mapboxAccessToken,
     mapboxSessionToken: window.crypto.randomUUID(),
   },
 });
+
+customElements.define(
+  "mapbox-gl",
+  class extends HTMLElement {
+    static get observedAttributes() {
+      return ["coordinates"];
+    }
+    constructor() {
+      super();
+      this.map = null;
+    }
+    connectedCallback() {
+      this.map = new MapboxGL.Map({
+        container: this,
+        style: "mapbox://styles/mapbox/streets-v12",
+        center: [0, 0],
+        zoom: 2,
+        accessToken: mapboxAccessToken,
+      });
+
+      this.map.on("load", () => {
+        this.dispatchEvent(
+          new CustomEvent("ready", {
+            bubbles: true,
+            composed: true,
+          })
+        );
+      });
+    }
+
+    attributeChangedCallback(name, _, newValue) {
+      if (name === "coordinates") {
+        const coordinates = JSON.parse(newValue);
+        this.map.flyTo({
+          center: [coordinates.longitude, coordinates.latitude],
+          zoom: 14,
+          essential: true,
+        });
+      }
+    }
+  }
+);
 
 customElements.define(
   "li-focus-manager",
