@@ -5,26 +5,17 @@ let app = Main.init({
 });
 
 customElements.define(
-  "focus-within",
+  "li-focus-manager",
   class extends HTMLElement {
     static get observedAttributes() {
-      return ["hasfocus"];
+      return ["has-focus"];
     }
     constructor() {
       super();
-      console.log("FocusWithin constructor");
     }
 
-    connectedCallback() {
-      console.log("FocusWithin connectedCallback");
-    }
-
-    attributeChangedCallback(name, oldValue, newValue) {
-      console.log(
-        `FocusWithin attributeChangedCallback: ${name} changed from ${oldValue} to ${newValue}`
-      );
-
-      if (name === "hasfocus") {
+    attributeChangedCallback(name, _, newValue) {
+      if (name === "has-focus") {
         if (newValue == "true") {
           this.firstElementChild.focus();
         } else {
@@ -34,13 +25,68 @@ customElements.define(
     }
 
     disconnectedCallback() {
-      if (this.getAttribute("hasfocus") == "true") {
+      if (this.getAttribute("has-focus") == "true") {
         this.dispatchEvent(
           new CustomEvent("remove", {
             bubbles: true,
             composed: true,
           })
         );
+      }
+    }
+  }
+);
+
+customElements.define(
+  "input-focus-manager",
+  class extends HTMLElement {
+    static get observedAttributes() {
+      return ["has-focus", "cursor-action"];
+    }
+    constructor() {
+      super();
+      this.lastSelection = null;
+    }
+
+    connectedCallback() {
+      this.firstElementChild.addEventListener("selectionchange", (e) => {
+        const start = this.firstElementChild.selectionStart;
+        const end = this.firstElementChild.selectionEnd;
+        this.lastSelection = { start, end };
+        console.log("selectionchange", start, end);
+      });
+    }
+
+    attributeChangedCallback(name, _, newValue) {
+      if (name === "has-focus") {
+        if (newValue == "true") {
+          this.firstElementChild.focus();
+        } else {
+          this.firstElementChild?.blur();
+        }
+      }
+      if (name === "cursor-action") {
+        console.log("lastSelection", this.lastSelection);
+        const start =
+          this.lastSelection?.start ?? this.firstElementChild.selectionStart;
+        const end =
+          this.lastSelection?.end ?? this.firstElementChild.selectionEnd;
+        console.log("cursor-action", newValue, start, end);
+
+        window.requestAnimationFrame(() => {
+          if (newValue == "right") {
+            this.firstElementChild.setSelectionRange(start + 1, end + 1);
+          }
+          if (newValue == "left") {
+            this.firstElementChild.setSelectionRange(start - 1, end - 1);
+          }
+          this.dispatchEvent(
+            new CustomEvent("reset", {
+              bubbles: true,
+              composed: true,
+            })
+          );
+        });
       }
     }
   }

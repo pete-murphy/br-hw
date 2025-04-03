@@ -20,10 +20,11 @@ decodeKey key msg =
 
 onKeyDown : List ( String, msg ) -> Attribute msg
 onKeyDown handlers =
-    Html.Events.on "keydown"
+    Html.Events.stopPropagationOn "keydown"
         (Json.Decode.oneOf
             (List.map
                 (\( key, msg ) -> decodeKey key msg)
                 handlers
             )
+            |> Json.Decode.map (\msg -> ( msg, True ))
         )

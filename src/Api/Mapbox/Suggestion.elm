@@ -13,15 +13,21 @@ type alias Suggestion =
 sampleSuggestions : List Suggestion
 sampleSuggestions =
     [ { name = "1201 S Main St"
-      , mapboxId = "Example ID"
+      , mapboxId = "Example ID 1"
       , address = Just "1201 S Main St"
       , fullAddress = Just "1201 S Main St, Ann Arbor, Michigan 48104, United States of America"
       , placeFormatted = "Ann Arbor, Michigan 48104, United States of America"
       }
     , { name = "120 S Main St"
-      , mapboxId = "Example ID"
+      , mapboxId = "Example ID 2"
       , address = Just "120 S Main St"
       , fullAddress = Just "120 S Main St, Ann Arbor, Michigan 48104, United States of America"
+      , placeFormatted = "Ann Arbor, Michigan 48104, United States of America"
+      }
+    , { name = "Juniper St"
+      , mapboxId = "Example ID 3"
+      , address = Just "Juniper St"
+      , fullAddress = Just "Juniper St, Ann Arbor, Michigan 48104, United States of America"
       , placeFormatted = "Ann Arbor, Michigan 48104, United States of America"
       }
     ]

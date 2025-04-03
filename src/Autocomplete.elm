@@ -66,6 +66,11 @@ type Value
     | SelectedSuggestion Suggestion
 
 
+type CursorAction
+    = MoveLeft
+    | MoveRight
+
+
 
 -- MODEL
 
@@ -75,6 +80,7 @@ type alias Model =
     , searchResults : WebData (List Suggestion)
     , debouncer : Debouncer String
     , focus : Focus
+    , cursorAction : Maybe CursorAction
     }
 
 
@@ -84,6 +90,7 @@ init =
     , searchResults = NotAsked
     , debouncer = Debouncer.init
     , focus = Elsewhere
+    , cursorAction = Nothing
     }
 
 
@@ -109,8 +116,13 @@ type Msg
     | UserClicked Focus
     | UserPressedArrowUpKey
     | UserPressedArrowDownKey
-    | AttemptBlur Focus
+    | UserPressedArrowLeftKey
+    | UserPressedArrowRightKey
     | UserSelectedSuggestion Suggestion
+    | UserClearedInput
+      -- Imperative
+    | ResetCursorAction
+    | AttemptBlur Focus
 
 
 type OutMsg
@@ -171,6 +183,15 @@ update msg model =
         UserPressedArrowUpKey ->
             ( { model | focus = decrementFocus model.focus }, Cmd.none, Nothing )
 
+        UserPressedArrowLeftKey ->
+            ( { model | focus = Input, cursorAction = Just MoveLeft }, Cmd.none, Nothing )
+
+        UserPressedArrowRightKey ->
+            ( { model | focus = Input, cursorAction = Just MoveRight }, Cmd.none, Nothing )
+
+        ResetCursorAction ->
+            ( { model | cursorAction = Nothing }, Cmd.none, Nothing )
+
         UserFocused focus ->
             ( { model | focus = focus }, Cmd.none, Nothing )
 
@@ -202,6 +223,16 @@ update msg model =
 
                     else
                         model.focus
+              }
+            , Cmd.none
+            , Nothing
+            )
+
+        UserClearedInput ->
+            ( { model
+                | value = InputText ""
+                , searchResults = NotAsked
+                , focus = Input
               }
             , Cmd.none
             , Nothing
@@ -253,8 +284,16 @@ view model =
                 ]
                 [ Html.text "Find in-store" ]
             )
-            (focusWithin (model.focus == Input)
+            (inputFocusManager
+                { hasFocus = model.focus == Input
+                , cursorAction = model.cursorAction
+                }
                 [ Attributes.class "grid"
+                , Html.Events.Extra.onKeyDown
+                    [ ( "ArrowDown", UserPressedArrowDownKey )
+                    , ( "ArrowUp", UserPressedArrowUpKey )
+                    , ( "Escape", UserClearedInput )
+                    ]
                 ]
                 [ Html.inputText
                     (case model.value of
@@ -274,7 +313,7 @@ view model =
                     , Events.onInput UserEnteredSearch
                     , Events.onFocus (UserFocused Input)
                     , Events.onBlur (UserBlurred Input)
-                    , Attributes.class "grid border border-neutral-500 border-solid p-2 focus-visible:ring-2 outline-none focus-visible:ring-accent-600 placeholder:text-neutral-500"
+                    , Attributes.class "grid border border-neutral-500 border-solid p-2 focus-visible:ring-4 outline-none focus-visible:ring-accent-600 placeholder:text-neutral-500"
                     ]
                 ]
             )
@@ -308,8 +347,15 @@ view model =
                                                 "false"
                                             )
                                         ]
-                                        [ focusWithin hasFocus
-                                            []
+                                        [ liFocusManager { hasFocus = hasFocus }
+                                            [ Html.Events.Extra.onKeyDown
+                                                [ ( "ArrowDown", UserPressedArrowDownKey )
+                                                , ( "ArrowUp", UserPressedArrowUpKey )
+                                                , ( "ArrowLeft", UserPressedArrowLeftKey )
+                                                , ( "ArrowRight", UserPressedArrowRightKey )
+                                                , ( "Escape", UserFocused Input )
+                                                ]
+                                            ]
                                             [ Html.button
                                                 [ Attributes.class "outline-none w-full text-start p-2 focus:bg-neutral-700 focus:text-white active:bg-neutral-800 group-hover:not-hover:focus:bg-neutral-600 active:transition-colors hover:not-focus:bg-neutral-300"
                                                 , Attributes.tabindex -1
@@ -321,7 +367,12 @@ view model =
                                                     , ( "Space", UserSelectedSuggestion suggestion )
                                                     ]
                                                 ]
-                                                [ Html.text suggestion.name ]
+                                                [ Html.div []
+                                                    [ Html.text suggestion.name
+                                                    ]
+                                                , Html.div [ Attributes.class "text-sm" ]
+                                                    [ Html.text suggestion.placeFormatted ]
+                                                ]
                                             ]
                                         ]
                                 )
@@ -344,24 +395,23 @@ view model =
             , Live.polite
             , Role.status
             ]
-            []
+            [-- TODO: Implement live region
+            ]
+        , Html.div [ Attributes.class "whitespace-pre-wrap p-2 font-mono bg-neutral-50" ]
+            [ Html.text (Debug.toString model)
+            ]
         ]
 
 
-focusWithin :
-    Bool
+liFocusManager :
+    { hasFocus : Bool }
     -> List (Attribute Msg)
     -> List (Html Msg)
     -> Html Msg
-focusWithin hasFocus attributes =
-    Html_.node "focus-within"
-        ([ Html.Events.Extra.onKeyDown
-            [ ( "ArrowDown", UserPressedArrowDownKey )
-            , ( "ArrowUp", UserPressedArrowUpKey )
-            , ( "Escape", UserFocused Input )
-            ]
-         , Attributes.attribute "hasfocus"
-            (if hasFocus then
+liFocusManager props attributes =
+    Html_.node "li-focus-manager"
+        ([ Attributes.attribute "has-focus"
+            (if props.hasFocus then
                 "true"
 
              else
@@ -370,6 +420,41 @@ focusWithin hasFocus attributes =
          , Events.custom "remove"
             (Decode.succeed
                 { message = UserFocused Input
+                , stopPropagation = False
+                , preventDefault = False
+                }
+            )
+         ]
+            ++ attributes
+        )
+
+
+inputFocusManager :
+    { hasFocus : Bool, cursorAction : Maybe CursorAction }
+    -> List (Attribute Msg)
+    -> List (Html Msg)
+    -> Html Msg
+inputFocusManager props attributes =
+    Html_.node "input-focus-manager"
+        ([ Attributes.attribute "has-focus"
+            (if props.hasFocus then
+                "true"
+
+             else
+                ""
+            )
+         , case props.cursorAction of
+            Just MoveLeft ->
+                Attributes.attribute "cursor-action" "left"
+
+            Just MoveRight ->
+                Attributes.attribute "cursor-action" "right"
+
+            Nothing ->
+                Attributes.attribute "cursor-action" ""
+         , Events.custom "reset"
+            (Decode.succeed
+                { message = ResetCursorAction
                 , stopPropagation = False
                 , preventDefault = False
                 }
