@@ -153,7 +153,15 @@ update_ msg model =
             )
 
         UserEnteredDebouncedSearch search ->
-            ( { model | searchResults = Success (filterOptions search) }
+            ( { model
+                | searchResults =
+                    case search of
+                        "" ->
+                            NotAsked
+
+                        _ ->
+                            Success (filterOptions search)
+              }
             , Cmd.none
             )
 
