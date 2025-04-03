@@ -362,6 +362,7 @@ focusWithin hasFocus attributes =
         ([ Html.Events.Extra.onKeyDown
             [ ( "ArrowDown", UserPressedArrowDownKey )
             , ( "ArrowUp", UserPressedArrowUpKey )
+            , ( "Escape", UserFocused Input )
             ]
          , Attributes.attribute "hasfocus"
             (if hasFocus then
