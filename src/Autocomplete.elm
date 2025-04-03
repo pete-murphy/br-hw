@@ -69,19 +69,6 @@ decrementFocus focus =
             Input
 
 
-listboxHasFocus : Focus -> Bool
-listboxHasFocus focus =
-    case focus of
-        Input ->
-            False
-
-        Listbox _ ->
-            True
-
-        Elsewhere ->
-            False
-
-
 type Value
     = InputText String
     | SelectedLocation Location
@@ -96,9 +83,6 @@ type alias Model =
     , searchResults : WebData (List Location)
     , debouncer : Debouncer String
     , focus : Focus
-
-    -- , inputHasFocus : Bool
-    -- , listboxHasFocus : Bool
     }
 
 
@@ -260,6 +244,9 @@ view_ model =
                 ( NotAsked, _, _ ) ->
                     False
 
+                ( _, Listbox _, _ ) ->
+                    True
+
                 ( _, Elsewhere, _ ) ->
                     False
 
@@ -299,7 +286,7 @@ view_ model =
                     , Events.onInput UserEnteredSearch
                     , Events.onFocus (UserFocused Input)
                     , Events.onBlur (UserBlurred Input)
-                    , Attributes.class "grid border border-neutral-500 border-solid p-2 has-focus-visible:ring-2 outline-none has-focus-visible:ring-accent-600 placeholder:text-neutral-500"
+                    , Attributes.class "grid border border-neutral-500 border-solid p-2 focus-visible:ring-2 outline-none focus-visible:ring-accent-600 placeholder:text-neutral-500"
                     ]
                 ]
             )
