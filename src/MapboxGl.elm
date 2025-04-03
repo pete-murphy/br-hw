@@ -7,12 +7,17 @@ import Json.Encode
 
 
 view :
-    { center : Coordinates
+    { center : Maybe Coordinates
     }
     -> Html msg
 view props =
     Html.node "mapbox-gl"
-        [ centerAttribute props.center
+        [ case props.center of
+            Nothing ->
+                Attributes.class ""
+
+            Just coordinates ->
+                centerAttribute coordinates
         , Attributes.class "grid w-full h-full"
         ]
         []

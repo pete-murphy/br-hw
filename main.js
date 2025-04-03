@@ -93,8 +93,8 @@ customElements.define(
     attributeChangedCallback(name, _, newValue) {
       if (name === "center") {
         const center = JSON.parse(newValue);
-        if (center.latitude && center.longitude) {
-          this.map.flyTo({
+        if (center.latitude != null && center.longitude != null) {
+          this.map?.flyTo({
             center: [center.longitude, center.latitude],
             zoom: 8,
             essential: true,

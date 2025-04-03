@@ -214,8 +214,7 @@ view model =
                         { center =
                             RemoteData.toMaybe okModel.selectedLocation
                                 |> Maybe.map Mapbox.coordinates
-                                |> Maybe.Extra.or (RemoteData.toMaybe okModel.userCurrentPosition)
-                                |> Maybe.withDefault { latitude = 0, longitude = 0 }
+                                |> Maybe.Extra.orElse (RemoteData.toMaybe okModel.userCurrentPosition)
                         }
                     ]
                 ]
