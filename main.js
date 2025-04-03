@@ -2,6 +2,10 @@ import Main from "./src/Main.elm";
 
 let app = Main.init({
   node: document.getElementById("app"),
+  flags: {
+    mapboxAccessToken: import.meta.env.VITE_APP_MAPBOX_ACCESS_TOKEN,
+    mapboxSessionToken: window.crypto.randomUUID(),
+  },
 });
 
 customElements.define(

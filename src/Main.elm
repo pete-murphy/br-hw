@@ -5,13 +5,16 @@ import Autocomplete
 import Browser
 import Html exposing (..)
 import Html.Attributes as Attributes
+import Json.Decode as Decode
+import Json.Decode.Pipeline as Pipeline
+import Json.Encode
 
 
 
 -- MAIN
 
 
-main : Program () Model Msg
+main : Program Json.Encode.Value Model Msg
 main =
     Browser.element
         { init = init
@@ -26,16 +29,45 @@ main =
 
 
 type alias Model =
+    Result Decode.Error OkModel
+
+
+type alias OkModel =
     { autocomplete : Autocomplete.Model
+    , mapboxAccessToken : String
+    , mapboxSessionToken : String
     }
 
 
-init : () -> ( Model, Cmd Msg )
+type alias Flags =
+    { mapboxAccessToken : String
+    , mapboxSessionToken : String
+    }
+
+
+flagsDecoder : Decode.Decoder Flags
+flagsDecoder =
+    Decode.succeed Flags
+        |> Pipeline.required "mapboxAccessToken" Decode.string
+        |> Pipeline.required "mapboxSessionToken" Decode.string
+
+
+init : Json.Encode.Value -> ( Model, Cmd Msg )
 init flags =
-    ( { autocomplete = Autocomplete.init
-      }
-    , Cmd.none
-    )
+    case Decode.decodeValue flagsDecoder flags of
+        Ok okFlags ->
+            ( Ok
+                { autocomplete = Autocomplete.init
+                , mapboxAccessToken = okFlags.mapboxAccessToken
+                , mapboxSessionToken = okFlags.mapboxSessionToken
+                }
+            , Cmd.none
+            )
+
+        Err err ->
+            ( Err err
+            , Cmd.none
+            )
 
 
 
@@ -49,30 +81,35 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
-        NoOp ->
+    case model of
+        Err _ ->
             ( model, Cmd.none )
 
-        GotAutocompleteMsg autocompleteMsg ->
-            let
-                ( autocomplete, cmd, outMsg ) =
-                    Autocomplete.update
-                        autocompleteMsg
-                        model.autocomplete
-            in
-            case outMsg of
-                Nothing ->
-                    ( { model | autocomplete = autocomplete }
-                    , Cmd.map GotAutocompleteMsg cmd
-                    )
+        Ok okModel ->
+            case msg of
+                NoOp ->
+                    ( Ok okModel, Cmd.none )
 
-                Just (Autocomplete.OutMsgUserSelectedSuggestion location) ->
-                    ( { model | autocomplete = autocomplete }
-                    , Cmd.batch
-                        [ Cmd.map GotAutocompleteMsg cmd
-                        , getLocation location
-                        ]
-                    )
+                GotAutocompleteMsg autocompleteMsg ->
+                    let
+                        ( autocomplete, cmd, outMsg ) =
+                            Autocomplete.update
+                                autocompleteMsg
+                                okModel.autocomplete
+                    in
+                    case outMsg of
+                        Nothing ->
+                            ( Ok { okModel | autocomplete = autocomplete }
+                            , Cmd.map GotAutocompleteMsg cmd
+                            )
+
+                        Just (Autocomplete.OutMsgUserSelectedSuggestion location) ->
+                            ( Ok { okModel | autocomplete = autocomplete }
+                            , Cmd.batch
+                                [ Cmd.map GotAutocompleteMsg cmd
+                                , getLocation location
+                                ]
+                            )
 
 
 getLocation : Suggestion -> Cmd Msg
@@ -94,9 +131,16 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    Html.div
-        [ Attributes.class "text-neutral-950" ]
-        [ Html.text "Hello, World!"
-        , Html.map GotAutocompleteMsg
-            (Autocomplete.view model.autocomplete)
-        ]
+    case model of
+        Err err ->
+            Html.div
+                [ Attributes.class "text-red-500" ]
+                [ Html.text ("Error: " ++ Decode.errorToString err) ]
+
+        Ok okModel ->
+            Html.div
+                [ Attributes.class "text-neutral-950" ]
+                [ Html.text "Hello, World!"
+                , Html.map GotAutocompleteMsg
+                    (Autocomplete.view okModel.autocomplete)
+                ]
