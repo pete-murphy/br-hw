@@ -4,8 +4,6 @@ import Autocomplete
 import Browser
 import Html exposing (..)
 import Html.Attributes as Attributes
-import Html.Events
-import Time
 
 
 
@@ -56,16 +54,32 @@ update msg model =
 
         GotAutocompleteMsg autocompleteMsg ->
             let
-                ( autocomplete, cmd ) =
-                    Autocomplete.update GotAutocompleteMsg
+                ( autocomplete, cmd, outMsg ) =
+                    Autocomplete.update
                         autocompleteMsg
                         model.autocomplete
             in
-            ( { model
-                | autocomplete = autocomplete
-              }
-            , cmd
-            )
+            case outMsg of
+                Nothing ->
+                    ( { model | autocomplete = autocomplete }
+                    , Cmd.map GotAutocompleteMsg cmd
+                    )
+
+                Just (Autocomplete.OutUserSelectedLocation location) ->
+                    ( { model | autocomplete = autocomplete }
+                    , Cmd.batch
+                        [ Cmd.map GotAutocompleteMsg cmd
+                        , getLocation location
+                        ]
+                    )
+
+
+getLocation : Autocomplete.Location -> Cmd Msg
+getLocation location =
+    -- Here you would implement the logic to get the location
+    -- For example, you could use a Cmd to make an HTTP request
+    -- to a geolocation API or similar.
+    Cmd.none
 
 
 subscriptions : Model -> Sub Msg
@@ -82,5 +96,6 @@ view model =
     Html.div
         [ Attributes.class "text-neutral-950" ]
         [ Html.text "Hello, World!"
-        , Autocomplete.view GotAutocompleteMsg model.autocomplete
+        , Html.map GotAutocompleteMsg
+            (Autocomplete.view model.autocomplete)
         ]

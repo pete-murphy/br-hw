@@ -1,6 +1,8 @@
 module Autocomplete exposing
-    ( Model
+    ( Location
+    , Model
     , Msg
+    , OutMsg(..)
     , init
     , update
     , view
@@ -131,14 +133,12 @@ type Msg
     | UserSelected Location
 
 
-update : (Msg -> msg) -> Msg -> Model -> ( Model, Cmd msg )
-update fromMsg msg model =
-    update_ msg model
-        |> Tuple.mapSecond (Cmd.map fromMsg)
+type OutMsg
+    = OutUserSelectedLocation Location
 
 
-update_ : Msg -> Model -> ( Model, Cmd Msg )
-update_ msg model =
+update : Msg -> Model -> ( Model, Cmd Msg, Maybe OutMsg )
+update msg model =
     case msg of
         UserEnteredSearch search ->
             let
@@ -150,6 +150,7 @@ update_ msg model =
                 , debouncer = debouncer
               }
             , cmd
+            , Nothing
             )
 
         UserEnteredDebouncedSearch search ->
@@ -163,6 +164,7 @@ update_ msg model =
                             Success (filterOptions search)
               }
             , Cmd.none
+            , Nothing
             )
 
         GotDebouncerMsg debouncerMsg ->
@@ -172,31 +174,33 @@ update_ msg model =
             in
             ( { model | debouncer = debouncer }
             , cmd
+            , Nothing
             )
 
         UserPressedArrowDownKey ->
             case model.searchResults of
                 Success [] ->
-                    ( model, Cmd.none )
+                    ( model, Cmd.none, Nothing )
 
                 Success filteredOptions ->
-                    ( { model | focus = incrementFocus (List.length filteredOptions) model.focus }, Cmd.none )
+                    ( { model | focus = incrementFocus (List.length filteredOptions) model.focus }, Cmd.none, Nothing )
 
                 _ ->
-                    ( model, Cmd.none )
+                    ( model, Cmd.none, Nothing )
 
         UserPressedArrowUpKey ->
-            ( { model | focus = decrementFocus model.focus }, Cmd.none )
+            ( { model | focus = decrementFocus model.focus }, Cmd.none, Nothing )
 
         UserFocused focus ->
-            ( { model | focus = focus }, Cmd.none )
+            ( { model | focus = focus }, Cmd.none, Nothing )
 
         UserBlurred focus ->
-            ( model, Cmd.Extra.perform (AttemptBlur focus) )
+            ( model, Cmd.Extra.perform (AttemptBlur focus), Nothing )
 
         UserClicked focus ->
             ( { model | focus = focus }
             , Cmd.none
+            , Nothing
             )
 
         UserSelected location ->
@@ -205,6 +209,7 @@ update_ msg model =
                 , focus = Input
               }
             , Cmd.none
+            , Just (OutUserSelectedLocation location)
             )
 
         AttemptBlur focus ->
@@ -219,6 +224,7 @@ update_ msg model =
                         model.focus
               }
             , Cmd.none
+            , Nothing
             )
 
 
@@ -235,14 +241,8 @@ debouncerConfig =
 -- VIEW
 
 
-view : (Msg -> msg) -> Model -> Html msg
-view fromMsg model =
-    view_ model
-        |> Html.map fromMsg
-
-
-view_ : Model -> Html Msg
-view_ model =
+view : Model -> Html Msg
+view model =
     let
         listboxId =
             "autocomplete-options"
