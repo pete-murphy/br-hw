@@ -11,13 +11,14 @@ import Accessibility as Html exposing (Attribute, Html)
 import Accessibility.Aria as Aria
 import Accessibility.Live as Live
 import Accessibility.Role as Role
-import Api.Mapbox.Suggestion as Suggestion exposing (Suggestion)
+import Api.Mapbox as Mapbox
 import Cmd.Extra
 import Debouncer exposing (Debouncer)
 import Html as Html_
 import Html.Attributes as Attributes
 import Html.Events as Events
 import Html.Events.Extra
+import Http
 import Json.Decode as Decode
 import RemoteData exposing (RemoteData(..), WebData)
 
@@ -63,7 +64,7 @@ decrementFocus focus =
 
 type Value
     = InputText String
-    | SelectedSuggestion Suggestion
+    | SelectedSuggestion Mapbox.Suggestion
 
 
 type CursorAction
@@ -77,7 +78,8 @@ type CursorAction
 
 type alias Model =
     { value : Value
-    , searchResults : WebData (List Suggestion)
+    , searchResults : WebData (List Mapbox.Suggestion)
+    , pendingRequestId : Maybe String
     , debouncer : Debouncer String
     , focus : Focus
     , cursorAction : Maybe CursorAction
@@ -88,19 +90,11 @@ init : Model
 init =
     { value = InputText ""
     , searchResults = NotAsked
+    , pendingRequestId = Nothing
     , debouncer = Debouncer.init
     , focus = Elsewhere
     , cursorAction = Nothing
     }
-
-
-filterOptions : String -> List Suggestion
-filterOptions search =
-    Suggestion.sampleSuggestions
-        |> List.filter
-            (\suggestion ->
-                String.contains (String.toLower search) (String.toLower suggestion.name)
-            )
 
 
 
@@ -118,9 +112,10 @@ type Msg
     | UserPressedArrowDownKey
     | UserPressedArrowLeftKey
     | UserPressedArrowRightKey
-    | UserSelectedSuggestion Suggestion
+    | UserSelectedSuggestion Mapbox.Suggestion
     | UserClearedInput
     | UserPressedPrintableCharacterKey Char
+    | ApiRespondedSuggestions String (Result Http.Error (List Mapbox.Suggestion))
       -- Imperative
     | ResetCursorAction
     | AttemptBlur Focus
@@ -128,11 +123,26 @@ type Msg
 
 
 type OutMsg
-    = OutMsgUserSelectedSuggestion Suggestion
+    = OutMsgUserSelectedSuggestion Mapbox.Suggestion
 
 
-update : Msg -> Model -> ( Model, Cmd Msg, Maybe OutMsg )
-update msg model =
+update :
+    { mapboxAccessToken : String
+    , mapboxSessionToken : String
+    }
+    -> Msg
+    -> Model
+    -> ( Model, Cmd Msg, Maybe OutMsg )
+update params msg model =
+    let
+        cancelPendingSearch =
+            case model.pendingRequestId of
+                Nothing ->
+                    Cmd.none
+
+                Just id ->
+                    Http.cancel id
+    in
     case msg of
         UserEnteredSearch search ->
             let
@@ -155,9 +165,19 @@ update msg model =
                             NotAsked
 
                         _ ->
-                            Success (filterOptions search)
+                            Loading
+                , pendingRequestId = Just search
               }
-            , Cmd.none
+            , if search == "" then
+                cancelPendingSearch
+
+              else
+                Mapbox.getSuggestions
+                    { mapboxAccessToken = params.mapboxAccessToken
+                    , mapboxSessionToken = params.mapboxSessionToken
+                    , query = search
+                    }
+                    (ApiRespondedSuggestions search)
             , Nothing
             )
 
@@ -221,6 +241,16 @@ update msg model =
             , Nothing
             )
 
+        ApiRespondedSuggestions searchTerm result ->
+            ( if model.pendingRequestId == Just searchTerm then
+                { model | searchResults = RemoteData.fromResult result }
+
+              else
+                model
+            , Cmd.none
+            , Nothing
+            )
+
         AttemptBlur focus ->
             -- We need to wait a tick to see if the focus has been set by some
             -- other message (like arrow key up/down)
@@ -240,9 +270,10 @@ update msg model =
             ( { model
                 | value = InputText ""
                 , searchResults = NotAsked
+                , pendingRequestId = Nothing
                 , focus = Input
               }
-            , Cmd.none
+            , cancelPendingSearch
             , Nothing
             )
 
@@ -253,7 +284,7 @@ update msg model =
 debouncerConfig : Debouncer.Config String Msg
 debouncerConfig =
     Debouncer.trailing
-        { wait = 200
+        { wait = 500
         , onReady = UserEnteredDebouncedSearch
         , onChange = GotDebouncerMsg
         }
@@ -287,7 +318,7 @@ view model =
                     True
     in
     Html.div
-        [ Attributes.class "grid gap-2 p-2 max-w-lg"
+        [ Attributes.class "grid gap-2 p-2 w-xs"
         ]
         [ Html.labelBefore [ Attributes.class "grid gap-2 peer" ]
             (Html.span
@@ -409,10 +440,9 @@ view model =
                                                 , Events.onFocus (UserFocused (Listbox { index = i }))
                                                 , Events.onClick (UserSelectedSuggestion suggestion)
                                                 ]
-                                                [ Html.div []
-                                                    [ Html.text suggestion.name
-                                                    ]
-                                                , Html.div [ Attributes.class "text-sm" ]
+                                                [ Html.div [ Attributes.class "line-clamp-1 text-ellipsis" ]
+                                                    [ Html.text suggestion.name ]
+                                                , Html.div [ Attributes.class "line-clamp-1 text-ellipsis text-sm" ]
                                                     [ Html.text suggestion.placeFormatted ]
                                                 ]
                                             ]
@@ -439,7 +469,7 @@ view model =
             ]
             [-- TODO: Implement live region
             ]
-        , Html.div [ Attributes.class "p-2 font-mono whitespace-pre-wrap bg-neutral-50" ]
+        , Html.div [ Attributes.class "p-2 font-mono whitespace-pre-wrap break-all bg-neutral-50" ]
             [ Html.text (Debug.toString model)
             ]
         ]

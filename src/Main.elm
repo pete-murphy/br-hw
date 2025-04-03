@@ -1,6 +1,6 @@
 module Main exposing (main)
 
-import Api.Mapbox.Suggestion exposing (Suggestion)
+import Api.Mapbox exposing (Suggestion)
 import Autocomplete
 import Browser
 import Html exposing (..)
@@ -93,7 +93,7 @@ update msg model =
                 GotAutocompleteMsg autocompleteMsg ->
                     let
                         ( autocomplete, cmd, outMsg ) =
-                            Autocomplete.update
+                            Autocomplete.update { mapboxAccessToken = okModel.mapboxAccessToken, mapboxSessionToken = okModel.mapboxSessionToken }
                                 autocompleteMsg
                                 okModel.autocomplete
                     in
