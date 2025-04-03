@@ -55,7 +55,17 @@ update msg model =
             ( model, Cmd.none )
 
         GotAutocompleteMsg autocompleteMsg ->
-            ( model, Cmd.none )
+            let
+                ( autocomplete, cmd ) =
+                    Autocomplete.update GotAutocompleteMsg
+                        autocompleteMsg
+                        model.autocomplete
+            in
+            ( { model
+                | autocomplete = autocomplete
+              }
+            , cmd
+            )
 
 
 subscriptions : Model -> Sub Msg
