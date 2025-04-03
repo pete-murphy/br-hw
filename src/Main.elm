@@ -1,5 +1,6 @@
 module Main exposing (main)
 
+import Autocomplete
 import Browser
 import Html exposing (..)
 import Html.Attributes as Attributes
@@ -26,12 +27,14 @@ main =
 
 
 type alias Model =
-    {}
+    { autocomplete : Autocomplete.Model
+    }
 
 
 init : () -> ( Model, Cmd Msg )
 init flags =
-    ( {}
+    ( { autocomplete = Autocomplete.init
+      }
     , Cmd.none
     )
 
@@ -42,12 +45,16 @@ init flags =
 
 type Msg
     = NoOp
+    | GotAutocompleteMsg Autocomplete.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         NoOp ->
+            ( model, Cmd.none )
+
+        GotAutocompleteMsg autocompleteMsg ->
             ( model, Cmd.none )
 
 
@@ -63,5 +70,7 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
     Html.div
-        [ Attributes.class "rounded-2xl bg-red-50" ]
-        [ Html.text "Hello, World!" ]
+        [ Attributes.class "text-neutral-950" ]
+        [ Html.text "Hello, World!"
+        , Autocomplete.view GotAutocompleteMsg model.autocomplete
+        ]
