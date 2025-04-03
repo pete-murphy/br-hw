@@ -1,5 +1,6 @@
 module Main exposing (main)
 
+import Api.Mapbox.Suggestion exposing (Suggestion)
 import Autocomplete
 import Browser
 import Html exposing (..)
@@ -65,7 +66,7 @@ update msg model =
                     , Cmd.map GotAutocompleteMsg cmd
                     )
 
-                Just (Autocomplete.OutUserSelectedLocation location) ->
+                Just (Autocomplete.OutMsgUserSelectedSuggestion location) ->
                     ( { model | autocomplete = autocomplete }
                     , Cmd.batch
                         [ Cmd.map GotAutocompleteMsg cmd
@@ -74,8 +75,8 @@ update msg model =
                     )
 
 
-getLocation : Autocomplete.Location -> Cmd Msg
-getLocation location =
+getLocation : Suggestion -> Cmd Msg
+getLocation suggestion =
     -- Here you would implement the logic to get the location
     -- For example, you could use a Cmd to make an HTTP request
     -- to a geolocation API or similar.

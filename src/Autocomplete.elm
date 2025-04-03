@@ -1,6 +1,5 @@
 module Autocomplete exposing
-    ( Location
-    , Model
+    ( Model
     , Msg
     , OutMsg(..)
     , init
@@ -12,6 +11,7 @@ import Accessibility as Html exposing (Attribute, Html)
 import Accessibility.Aria as Aria
 import Accessibility.Live as Live
 import Accessibility.Role as Role
+import Api.Mapbox.Suggestion as Suggestion exposing (Suggestion)
 import Cmd.Extra
 import Debouncer exposing (Debouncer)
 import Html as Html_
@@ -20,16 +20,6 @@ import Html.Events as Events
 import Html.Events.Extra
 import Json.Decode as Decode
 import RemoteData exposing (RemoteData(..), WebData)
-
-
-type alias Location =
-    { name : String
-
-    -- , address : String
-    -- , latitude : Float
-    -- , longitude : Float
-    , id : String
-    }
 
 
 type Focus
@@ -73,7 +63,7 @@ decrementFocus focus =
 
 type Value
     = InputText String
-    | SelectedLocation Location
+    | SelectedSuggestion Suggestion
 
 
 
@@ -82,7 +72,7 @@ type Value
 
 type alias Model =
     { value : Value
-    , searchResults : WebData (List Location)
+    , searchResults : WebData (List Suggestion)
     , debouncer : Debouncer String
     , focus : Focus
     }
@@ -97,22 +87,12 @@ init =
     }
 
 
-options =
-    [ { name = "France", id = "1" }
-    , { name = "Germany", id = "2" }
-    , { name = "Italy", id = "3" }
-    , { name = "Spain", id = "4" }
-    , { name = "United Kingdom", id = "5" }
-    , { name = "United States", id = "6" }
-    ]
-
-
-filterOptions : String -> List Location
+filterOptions : String -> List Suggestion
 filterOptions search =
-    options
+    Suggestion.sampleSuggestions
         |> List.filter
-            (\location ->
-                String.contains (String.toLower search) (String.toLower location.name)
+            (\suggestion ->
+                String.contains (String.toLower search) (String.toLower suggestion.name)
             )
 
 
@@ -130,11 +110,11 @@ type Msg
     | UserPressedArrowUpKey
     | UserPressedArrowDownKey
     | AttemptBlur Focus
-    | UserSelected Location
+    | UserSelectedSuggestion Suggestion
 
 
 type OutMsg
-    = OutUserSelectedLocation Location
+    = OutMsgUserSelectedSuggestion Suggestion
 
 
 update : Msg -> Model -> ( Model, Cmd Msg, Maybe OutMsg )
@@ -203,13 +183,13 @@ update msg model =
             , Nothing
             )
 
-        UserSelected location ->
+        UserSelectedSuggestion suggestion ->
             ( { model
-                | value = SelectedLocation location
+                | value = SelectedSuggestion suggestion
                 , focus = Input
               }
             , Cmd.none
-            , Just (OutUserSelectedLocation location)
+            , Just (OutMsgUserSelectedSuggestion suggestion)
             )
 
         AttemptBlur focus ->
@@ -258,7 +238,7 @@ view model =
                 ( _, Elsewhere, _ ) ->
                     False
 
-                ( _, _, SelectedLocation _ ) ->
+                ( _, _, SelectedSuggestion _ ) ->
                     False
 
                 ( _, _, _ ) ->
@@ -281,8 +261,8 @@ view model =
                         InputText search ->
                             search
 
-                        SelectedLocation location ->
-                            location.name
+                        SelectedSuggestion suggestion ->
+                            suggestion.name
                     )
                     [ Aria.owns [ listboxId ]
                     , Aria.autoCompleteList
@@ -307,13 +287,14 @@ view model =
             ]
             [ case model.searchResults of
                 Success [] ->
-                    Html.text "No results found"
+                    Html.div [ Attributes.class "p-2" ]
+                        [ Html.text "No results found" ]
 
                 Success results ->
                     Html.ul []
                         (results
                             |> List.indexedMap
-                                (\i location ->
+                                (\i suggestion ->
                                     let
                                         hasFocus =
                                             model.focus == Listbox { index = i }
@@ -334,20 +315,29 @@ view model =
                                                 , Attributes.tabindex -1
                                                 , Events.onBlur (UserBlurred (Listbox { index = i }))
                                                 , Events.onFocus (UserFocused (Listbox { index = i }))
-                                                , Events.onClick (UserSelected location)
+                                                , Events.onClick (UserSelectedSuggestion suggestion)
                                                 , Html.Events.Extra.onKeyDown
-                                                    [ ( "Enter", UserSelected location )
-                                                    , ( "Space", UserSelected location )
+                                                    [ ( "Enter", UserSelectedSuggestion suggestion )
+                                                    , ( "Space", UserSelectedSuggestion suggestion )
                                                     ]
                                                 ]
-                                                [ Html.text location.name ]
+                                                [ Html.text suggestion.name ]
                                             ]
                                         ]
                                 )
                         )
 
-                _ ->
-                    Html.text "Loading..."
+                Loading ->
+                    Html.div [ Attributes.class "p-2" ]
+                        [ Html.text "Loading..." ]
+
+                NotAsked ->
+                    Html.div [ Attributes.class "p-2 h-[1lh]" ]
+                        [ Html.text "" ]
+
+                Failure _ ->
+                    Html.div [ Attributes.class "p-2" ]
+                        [ Html.text "Something went wrong!" ]
             ]
         , Html.div
             [ Attributes.class "sr-only"
@@ -355,8 +345,6 @@ view model =
             , Role.status
             ]
             []
-        , Html.div []
-            [ Html.text (Debug.toString model) ]
         ]
 
 
