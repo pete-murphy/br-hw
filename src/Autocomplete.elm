@@ -371,7 +371,7 @@ view model =
                     , Events.onInput UserEnteredSearch
                     , Events.onFocus (UserFocused Input)
                     , Events.onBlur (UserBlurred Input)
-                    , Attributes.class "grid p-2 border border-solid outline-none focus-visible:ring-4 border-neutral-500 placeholder:text-neutral-500 focus-visible:ring-accent-600"
+                    , Attributes.class "grid p-2 border border-gray-500 border-solid outline-none focus-visible:ring-4 placeholder:text-gray-500 focus-visible:ring-accent-600"
                     ]
                 ]
             )
@@ -381,7 +381,7 @@ view model =
             , Attributes.class "relative w-fulll"
             ]
             [ Html.div
-                [ Attributes.class "w-full absolute h-0 bg-white border border-solid shadow-md opacity-0 group transition-[height,_opacity] overflow-clip transition-discrete border-neutral-500"
+                [ Attributes.class "absolute w-full h-0 bg-white border border-gray-500 border-solid shadow-md opacity-0 group transition-[height,_opacity] overflow-clip transition-discrete"
                 , Attributes.classList
                     [ ( "opacity-100 h-[calc-size(auto,_size)]", isExpanded ) ]
                 ]
@@ -443,7 +443,7 @@ view model =
                                                     )
                                                 ]
                                                 [ Html.button
-                                                    [ Attributes.class "p-2 w-full outline-none focus:text-white active:transition-colors text-start group-hover:not-hover:focus:bg-neutral-600 hover:not-focus:bg-neutral-300 focus:bg-neutral-700 active:bg-neutral-800"
+                                                    [ Attributes.class "p-2 w-full outline-none focus:text-white focus:bg-gray-700 active:bg-gray-800 active:transition-colors text-start group-hover:not-hover:focus:bg-gray-600 hover:not-focus:bg-gray-300"
                                                     , Attributes.tabindex -1
                                                     , Events.onBlur (UserBlurred (Listbox { index = i }))
                                                     , Events.onFocus (UserFocused (Listbox { index = i }))
@@ -452,7 +452,7 @@ view model =
                                                     [ Html.div [ Attributes.class "line-clamp-1 text-ellipsis" ]
                                                         [ Html.text (Mapbox.name suggestion) ]
                                                     , Html.div
-                                                        [ Attributes.class "line-clamp-1 text-ellipsis text-sm" ]
+                                                        [ Attributes.class "text-sm line-clamp-1 text-ellipsis" ]
                                                         [ Html.text (Mapbox.placeFormatted suggestion) ]
                                                     ]
                                                 ]

@@ -9,7 +9,6 @@ module Api.Mapbox exposing
     , maybePlaceFormatted
     , name
     , placeFormatted
-    , coordinatesAttribute
     , getSuggestions
     , retrieveSuggestion
     )
@@ -47,12 +46,10 @@ module Api.Mapbox exposing
 
 -}
 
-import Html exposing (Attribute)
-import Html.Attributes
+import Api.Coordinates as Coordinates exposing (Coordinates)
 import Http
 import Json.Decode
 import Json.Decode.Pipeline as Pipeline
-import Json.Encode
 import Url.Builder exposing (QueryParameter(..))
 
 
@@ -75,12 +72,6 @@ type alias Suggestion =
 type alias Retrieved =
     { coordinates : Coordinates
     , placeFormatted : Maybe String
-    }
-
-
-type alias Coordinates =
-    { latitude : Float
-    , longitude : Float
     }
 
 
@@ -149,17 +140,10 @@ suggestionFeatureDecoder =
         |> Pipeline.custom suggestionDecoder
 
 
-coordinatesDecoder : Json.Decode.Decoder Coordinates
-coordinatesDecoder =
-    Json.Decode.succeed Coordinates
-        |> Pipeline.required "latitude" Json.Decode.float
-        |> Pipeline.required "longitude" Json.Decode.float
-
-
 retrievedDecoder : Json.Decode.Decoder Retrieved
 retrievedDecoder =
     Json.Decode.succeed Retrieved
-        |> Pipeline.required "coordinates" coordinatesDecoder
+        |> Pipeline.required "coordinates" Coordinates.decoder
         |> Pipeline.optional "place_formatted" (Json.Decode.nullable Json.Decode.string) Nothing
 
 
@@ -168,24 +152,6 @@ retrievedFeatureDecoder =
     Json.Decode.succeed Feature
         |> Pipeline.custom internalsDecoder
         |> Pipeline.custom retrievedDecoder
-
-
-
--- HTML
-
-
-coordinatesAttribute : Feature Retrieved -> Attribute msg
-coordinatesAttribute (Feature _ retrieved) =
-    let
-        json =
-            Json.Encode.encode 0
-                (Json.Encode.object
-                    [ ( "latitude", Json.Encode.float retrieved.coordinates.latitude )
-                    , ( "longitude", Json.Encode.float retrieved.coordinates.longitude )
-                    ]
-                )
-    in
-    Html.Attributes.attribute "coordinates" json
 
 
 

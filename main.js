@@ -23,7 +23,7 @@ customElements.define(
     connectedCallback() {
       this.map = new MapboxGL.Map({
         container: this,
-        style: "mapbox://styles/mapbox/streets-v12",
+        style: "mapbox://styles/pfmurphy/cm22iwfz900bx01qk1jtae58d",
         center: [0, 0],
         zoom: 2,
         accessToken: mapboxAccessToken,
@@ -34,6 +34,23 @@ customElements.define(
           new CustomEvent("ready", {
             bubbles: true,
             composed: true,
+            detail: {
+              center: this.map.getCenter(),
+              bbox: this.map.getBounds(),
+            },
+          })
+        );
+      });
+
+      this.map.on("moveend", () => {
+        this.dispatchEvent(
+          new CustomEvent("moved", {
+            bubbles: true,
+            composed: true,
+            detail: {
+              center: this.map.getCenter(),
+              bbox: this.map.getBounds(),
+            },
           })
         );
       });

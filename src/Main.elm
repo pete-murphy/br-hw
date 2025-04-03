@@ -9,6 +9,7 @@ import Http
 import Json.Decode as Decode
 import Json.Decode.Pipeline as Pipeline
 import Json.Encode
+import MapboxGl
 import RemoteData exposing (WebData)
 
 
@@ -151,7 +152,7 @@ view model =
         Ok okModel ->
             Html.div []
                 [ Html.div
-                    [ Attributes.class "text-neutral-950" ]
+                    [ Attributes.class "text-gray-950" ]
                     [ Html.map GotAutocompleteMsg
                         (Autocomplete.view okModel.autocomplete)
                     , case okModel.selectedLocation of
@@ -160,7 +161,7 @@ view model =
 
                         RemoteData.Loading ->
                             Html.div
-                                [ Attributes.class "text-neutral-700" ]
+                                [ Attributes.class "text-gray-700" ]
                                 [ Html.text "Loading..." ]
 
                         RemoteData.Failure _ ->
@@ -174,14 +175,11 @@ view model =
                                 [ Html.text ("Success: " ++ Mapbox.name feature) ]
                     ]
                 , Html.div []
-                    [ Html.node "mapbox-gl"
-                        [ case okModel.selectedLocation of
-                            RemoteData.Success feature ->
-                                Mapbox.coordinatesAttribute feature
-
-                            _ ->
-                                Attributes.class ""
-                        ]
-                        []
+                    [ MapboxGl.view
+                        { center =
+                            RemoteData.toMaybe okModel.selectedLocation
+                                |> Maybe.map Mapbox.coordinates
+                                |> Maybe.withDefault { latitude = 0, longitude = 0 }
+                        }
                     ]
                 ]
