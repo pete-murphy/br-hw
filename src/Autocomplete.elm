@@ -287,11 +287,11 @@ view model =
                     True
     in
     Html.div
-        [ Attributes.class "p-2 max-w-lg grid gap-2"
+        [ Attributes.class "grid gap-2 p-2 max-w-lg"
         ]
-        [ Html.labelBefore [ Attributes.class "peer grid gap-2" ]
+        [ Html.labelBefore [ Attributes.class "grid gap-2 peer" ]
             (Html.span
-                [ Attributes.class "uppercase font-semibold text-sm tracking-wide"
+                [ Attributes.class "text-sm font-semibold tracking-wide uppercase"
                 ]
                 [ Html.text "Find in-store" ]
             )
@@ -334,16 +334,16 @@ view model =
                     , Events.onInput UserEnteredSearch
                     , Events.onFocus (UserFocused Input)
                     , Events.onBlur (UserBlurred Input)
-                    , Attributes.class "grid border border-neutral-500 border-solid p-2 focus-visible:ring-4 outline-none focus-visible:ring-accent-600 placeholder:text-neutral-500"
+                    , Attributes.class "grid p-2 border border-solid outline-none focus-visible:ring-4 border-neutral-500 placeholder:text-neutral-500 focus-visible:ring-accent-600"
                     ]
                 ]
             )
         , Html.div
             [ Role.listBox
             , Attributes.id listboxId
-            , Attributes.class "group opacity-0 h-0 transition-[height,_opacity]  overflow-clip transition-discrete border border-neutral-500 border-solid bg-white shadow-md"
+            , Attributes.class "h-0 bg-white border border-solid shadow-md opacity-0 group transition-[height,_opacity] overflow-clip transition-discrete border-neutral-500"
             , Attributes.classList
-                [ ( "h-[calc-size(auto,_size)] opacity-100", isExpanded ) ]
+                [ ( "opacity-100 h-[calc-size(auto,_size)]", isExpanded ) ]
             ]
             [ case model.searchResults of
                 Success [] ->
@@ -403,7 +403,7 @@ view model =
                                                 )
                                             ]
                                             [ Html.button
-                                                [ Attributes.class "outline-none w-full text-start p-2 focus:bg-neutral-700 focus:text-white active:bg-neutral-800 group-hover:not-hover:focus:bg-neutral-600 active:transition-colors hover:not-focus:bg-neutral-300"
+                                                [ Attributes.class "p-2 w-full outline-none focus:text-white active:transition-colors text-start group-hover:not-hover:focus:bg-neutral-600 hover:not-focus:bg-neutral-300 focus:bg-neutral-700 active:bg-neutral-800"
                                                 , Attributes.tabindex -1
                                                 , Events.onBlur (UserBlurred (Listbox { index = i }))
                                                 , Events.onFocus (UserFocused (Listbox { index = i }))
@@ -439,7 +439,7 @@ view model =
             ]
             [-- TODO: Implement live region
             ]
-        , Html.div [ Attributes.class "whitespace-pre-wrap p-2 font-mono bg-neutral-50" ]
+        , Html.div [ Attributes.class "p-2 font-mono whitespace-pre-wrap bg-neutral-50" ]
             [ Html.text (Debug.toString model)
             ]
         ]
