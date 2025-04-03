@@ -53,7 +53,6 @@ customElements.define(
         const start = this.firstElementChild.selectionStart;
         const end = this.firstElementChild.selectionEnd;
         this.lastSelection = { start, end };
-        console.log("selectionchange", start, end);
       });
     }
 
@@ -66,12 +65,10 @@ customElements.define(
         }
       }
       if (name === "cursor-action") {
-        console.log("lastSelection", this.lastSelection);
         const start =
           this.lastSelection?.start ?? this.firstElementChild.selectionStart;
         const end =
           this.lastSelection?.end ?? this.firstElementChild.selectionEnd;
-        console.log("cursor-action", newValue, start, end);
 
         window.requestAnimationFrame(() => {
           if (newValue == "right") {
