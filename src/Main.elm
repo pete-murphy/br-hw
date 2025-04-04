@@ -185,9 +185,9 @@ view model =
                 [ Html.text ("Error: " ++ Decode.errorToString err) ]
 
         Ok okModel ->
-            Html.div []
+            Html.div [ Attributes.class "flex flex-wrap text-gray-950" ]
                 [ Html.div
-                    [ Attributes.class "text-gray-950" ]
+                    [ Attributes.class "max-w-xl min-w-sm grow" ]
                     [ Html.map GotAutocompleteMsg
                         (Autocomplete.view okModel.autocomplete)
                     , case okModel.selectedLocation of
@@ -209,7 +209,7 @@ view model =
                                 [ Attributes.class "" ]
                                 [ Html.text ("Success: " ++ Mapbox.name feature) ]
                     ]
-                , Html.div [ Attributes.class "w-full h-96" ]
+                , Html.div [ Attributes.class "grid h-96 min-w-lg grow" ]
                     [ MapboxGl.view
                         { center =
                             RemoteData.toMaybe okModel.selectedLocation

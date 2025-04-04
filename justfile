@@ -1,9 +1,10 @@
 set dotenv-load := true
+set quiet
 
-@default:
+default:
     just --list
 
-@run:
+run:
     #!/usr/bin/env bash
     set -eu
     if [[ -z "$MAPBOX_ACCESS_TOKEN" ]]; then
@@ -14,14 +15,14 @@ set dotenv-load := true
     export VITE_APP_MAPBOX_ACCESS_TOKEN="$MAPBOX_ACCESS_TOKEN"
     vite
 
-@sort:
+sort flag="--check-formatted":
     #!/usr/bin/env bash
     set -eu
-    rustywind --write --custom-regex "\bclass[\s(<|]+\"([^\"]*)\"" .
-    rustywind --write --custom-regex "\bclass[\s(]+\"[^\"]*\"[\s+]+\"([^\"]*)\"" .
-    rustywind --write --custom-regex "\bclass[\s<|]+\"[^\"]*\"\s*\+{2}\s*\" ([^\"]*)\"" .
-    rustywind --write --custom-regex "\bclass[\s<|]+\"[^\"]*\"\s*\+{2}\s*\" [^\"]*\"\s*\+{2}\s*\" ([^\"]*)\"" .
-    rustywind --write --custom-regex "\bclass[\s<|]+\"[^\"]*\"\s*\+{2}\s*\" [^\"]*\"\s*\+{2}\s*\" [^\"]*\"\s*\+{2}\s*\" ([^\"]*)\"" .
-    rustywind --write --custom-regex "\bclassList[\s\[\(]+\"([^\"]*)\"" .
-    rustywind --write --custom-regex "\bclassList[\s\[\(]+\"[^\"]*\",\s[^\)]+\)[\s\[\(,]+\"([^\"]*)\"" .
-    rustywind --write --custom-regex "\bclassList[\s\[\(]+\"[^\"]*\",\s[^\)]+\)[\s\[\(,]+\"[^\"]*\",\s[^\)]+\)[\s\[\(,]+\"([^\"]*)\"" .
+    rustywind {{flag}} --custom-regex "\bclass[\s(<|]+\"([^\"]*)\"" .
+    rustywind {{flag}} --custom-regex "\bclass[\s(]+\"[^\"]*\"[\s+]+\"([^\"]*)\"" .
+    rustywind {{flag}} --custom-regex "\bclass[\s<|]+\"[^\"]*\"\s*\+{2}\s*\" ([^\"]*)\"" .
+    rustywind {{flag}} --custom-regex "\bclass[\s<|]+\"[^\"]*\"\s*\+{2}\s*\" [^\"]*\"\s*\+{2}\s*\" ([^\"]*)\"" .
+    rustywind {{flag}} --custom-regex "\bclass[\s<|]+\"[^\"]*\"\s*\+{2}\s*\" [^\"]*\"\s*\+{2}\s*\" [^\"]*\"\s*\+{2}\s*\" ([^\"]*)\"" .
+    rustywind {{flag}} --custom-regex "\bclassList[\s\[\(]+\"([^\"]*)\"" .
+    rustywind {{flag}} --custom-regex "\bclassList[\s\[\(]+\"[^\"]*\",\s[^\)]+\)[\s\[\(,]+\"([^\"]*)\"" .
+    rustywind {{flag}} --custom-regex "\bclassList[\s\[\(]+\"[^\"]*\",\s[^\)]+\)[\s\[\(,]+\"[^\"]*\",\s[^\)]+\)[\s\[\(,]+\"([^\"]*)\"" .

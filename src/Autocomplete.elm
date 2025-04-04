@@ -324,8 +324,7 @@ view model =
                     True
     in
     Html.div
-        [ Attributes.class "grid gap-2 p-2 w-xs"
-        ]
+        [ Attributes.class "grid gap-2 p-2" ]
         [ Accessibility.labelBefore [ Attributes.class "grid gap-2 peer" ]
             (Html.span
                 [ Attributes.class "text-sm font-semibold tracking-wide uppercase"
