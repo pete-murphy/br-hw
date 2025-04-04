@@ -286,6 +286,20 @@ view model =
                         [ MapboxGl.view
                             { center = centeredCoordinates okModel
                             , onMove = UserMovedMap
+                            , markers =
+                                case ApiData.toMaybe okModel.nearbyRetailersResponse of
+                                    Just response ->
+                                        response.retailers
+                                            |> List.map
+                                                (\retailer ->
+                                                    { id = retailer.id
+                                                    , latitude = retailer.latitude
+                                                    , longitude = retailer.longitude
+                                                    }
+                                                )
+
+                                    Nothing ->
+                                        []
                             }
                         ]
                     , Html.div [ Attributes.class "overflow-auto h-full max-h-[12rem] @min-xl:max-h-full @min-xl:[grid-row:2] @min-xl:[grid-column:1]" ]

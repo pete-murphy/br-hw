@@ -1,5 +1,6 @@
 module MapboxGl exposing
     ( MapView
+    , Marker
     , view
     )
 
@@ -16,6 +17,22 @@ type alias MapView =
     { center : Coordinates
     , bounds : ( Coordinates, Coordinates )
     }
+
+
+type alias Marker =
+    { id : String
+    , latitude : Float
+    , longitude : Float
+    }
+
+
+encodeMarker : Marker -> Json.Encode.Value
+encodeMarker marker =
+    Json.Encode.object
+        [ ( "id", Json.Encode.string marker.id )
+        , ( "latitude", Json.Encode.float marker.latitude )
+        , ( "longitude", Json.Encode.float marker.longitude )
+        ]
 
 
 decodeMapViewDetail : Decode.Decoder MapView
@@ -55,6 +72,7 @@ decodeMapViewDetail =
 view :
     { center : Maybe Coordinates
     , onMove : MapView -> msg
+    , markers : List Marker
     }
     -> Html msg
 view props =
@@ -68,6 +86,7 @@ view props =
         , Attributes.class "grid w-full h-full"
         , Events.on "load" (decodeMapViewDetail |> Decode.map props.onMove)
         , Events.on "moveend" (decodeMapViewDetail |> Decode.map props.onMove)
+        , markersAttribute props.markers
 
         -- , Events.on "zoomend" (decodeMapViewDetail |> Decode.map props.onMove)
         ]
@@ -81,3 +100,12 @@ centerAttribute coordinates =
             Json.Encode.encode 0 (Coordinates.encode coordinates)
     in
     Attributes.attribute "center" json
+
+
+markersAttribute : List Marker -> Attribute msg
+markersAttribute markers =
+    let
+        json =
+            Json.Encode.encode 0 (Json.Encode.list encodeMarker markers)
+    in
+    Attributes.attribute "markers" json
