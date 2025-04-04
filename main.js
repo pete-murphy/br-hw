@@ -138,7 +138,6 @@ customElements.define(
           el.style.height = `1.5rem`
           el.dataset.id = marker.id
           el.onmouseenter = () => {
-            console.log("mouseover", marker.id)
             this.dispatchEvent(
               new CustomEvent("marker-mouseenter", {
                 bubbles: true,
@@ -150,7 +149,6 @@ customElements.define(
             )
           }
           el.onmouseleave = () => {
-            console.log("mouseout", marker.id)
             this.dispatchEvent(
               new CustomEvent("marker-mouseleave", {
                 bubbles: true,
@@ -214,8 +212,6 @@ customElements.define(
       if (name === "has-focus") {
         if (newValue == "true") {
           this.firstElementChild.focus()
-        } else {
-          this.firstElementChild?.blur()
         }
       }
     }

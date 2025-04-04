@@ -442,11 +442,6 @@ view model =
                                 ]
                         )
                     ]
-                , Html.div
-                    [ Attributes.class "font-mono text-sm text-gray-700 break-words pre"
-                    ]
-                    [ Html.text (Debug.toString okModel.highlightedRetailerId)
-                    ]
                 ]
 
 
