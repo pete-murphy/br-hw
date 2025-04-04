@@ -3,11 +3,15 @@ import MapboxGL from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 const mapboxAccessToken = import.meta.env.VITE_APP_MAPBOX_ACCESS_TOKEN;
+const mapboxSessionToken =
+  window.sessionStorage.getItem("session_id") ?? window.crypto.randomUUID();
+window.sessionStorage.setItem("session_id", mapboxSessionToken);
+
 let app = Main.init({
   node: document.getElementById("app"),
   flags: {
     mapboxAccessToken,
-    mapboxSessionToken: window.crypto.randomUUID(),
+    mapboxSessionToken,
   },
 });
 
@@ -25,7 +29,7 @@ window.navigator.geolocation.getCurrentPosition(
       type: "CurrentPositionError",
       error: error.message,
     });
-  }
+  },
 );
 
 // Mapbox GL custom element
@@ -59,7 +63,7 @@ customElements.define(
               center: this.map.getCenter(),
               bounds: this.map.getBounds(),
             },
-          })
+          }),
         );
       });
 
@@ -72,7 +76,7 @@ customElements.define(
               center: this.map.getCenter(),
               bounds: this.map.getBounds(),
             },
-          })
+          }),
         );
       });
 
@@ -85,7 +89,7 @@ customElements.define(
               center: this.map.getCenter(),
               bounds: this.map.getBounds(),
             },
-          })
+          }),
         );
       });
     }
@@ -102,7 +106,7 @@ customElements.define(
         }
       }
     }
-  }
+  },
 );
 
 // Custom element for managing focus of list item in the combobox listbox
@@ -140,11 +144,11 @@ customElements.define(
           new CustomEvent("remove", {
             bubbles: true,
             composed: true,
-          })
+          }),
         );
       }
     }
-  }
+  },
 );
 
 // Custom element for managing focus of combobox input
@@ -199,10 +203,10 @@ customElements.define(
             new CustomEvent("reset", {
               bubbles: true,
               composed: true,
-            })
+            }),
           );
         });
       }
     }
-  }
+  },
 );
