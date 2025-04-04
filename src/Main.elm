@@ -275,20 +275,20 @@ view model =
 
         Ok okModel ->
             Html.main_ [ Attributes.class "grid @container text-gray-950" ]
-                [ Html.div [ Attributes.class "grid grid-cols-1 grid-flow-row @min-xl:grid-cols-[clamp(18rem,_50cqi,_24rem)_1fr] @min-xl:grid-rows-[auto_1fr] h-[50vh] min-h-[28rem]" ]
-                    [ Html.div [ Attributes.class "[grid-row:1] [grid-column:1]" ]
+                [ Html.div [ Attributes.class "grid grid-cols-1 grid-flow-row @min-xl:grid-cols-[clamp(18rem,_50cqi,_24rem)_1fr] @min-xl:grid-rows-[auto_1fr] @min-xl:h-[50vh] min-h-[28rem]" ]
+                    [ Html.div [ Attributes.class "@min-xl:[grid-row:1] @min-xl:[grid-column:1]" ]
                         [ Html.div [ Attributes.class "" ]
                             [ Html.map GotAutocompleteMsg
                                 (Autocomplete.view okModel.autocomplete)
                             ]
                         ]
-                    , Html.div [ Attributes.class "[grid-column:2] [grid-row:1/span_2]" ]
+                    , Html.div [ Attributes.class "@min-xl:[grid-column:2] @min-xl:[grid-row:1/span_2] h-[50vh] min-h-[28rem]" ]
                         [ MapboxGl.view
                             { center = centeredCoordinates okModel
                             , onMove = UserMovedMap
                             }
                         ]
-                    , Html.div [ Attributes.class "overflow-auto h-full [grid-row:2] [grid-column:1]" ]
+                    , Html.div [ Attributes.class "overflow-auto h-full max-h-[12rem] @min-xl:max-h-full @min-xl:[grid-row:2] @min-xl:[grid-column:1]" ]
                         (case ( ApiData.value okModel.nearbyRetailersResponse, ApiData.isLoading okModel.nearbyRetailersResponse ) of
                             ( ApiData.Empty, False ) ->
                                 []
@@ -316,7 +316,7 @@ view model =
                                         Html.text "No nearby retailers found."
 
                                     _ ->
-                                        Html.ul [ Attributes.class "grid gap-1" ]
+                                        Html.ul [ Attributes.class "grid gap-1 py-1" ]
                                             (response.retailers
                                                 |> List.map
                                                     (\retailer ->

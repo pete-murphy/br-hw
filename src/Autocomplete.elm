@@ -418,9 +418,9 @@ view model =
             , Attributes.class "relative z-10 w-full"
             ]
             [ Html.div
-                [ Attributes.class "absolute w-full h-0 bg-white border border-gray-500 border-solid shadow-md opacity-0 group transition-[height,_opacity] overflow-clip transition-discrete"
+                [ Attributes.class "absolute w-full h-0 bg-white border border-gray-500 border-solid shadow-md opacity-0 ease-out group transition-[height,_opacity] overflow-clip transition-discrete"
                 , Attributes.classList
-                    [ ( "opacity-100 h-[calc-size(auto,_size)]", isExpanded ) ]
+                    [ ( "opacity-100 ease-in h-[calc-size(auto,_size)]", isExpanded ) ]
                 ]
                 [ case ( ApiData.value model.searchResults, ApiData.isLoading model.searchResults ) of
                     ( ApiData.Success [], _ ) ->
@@ -480,7 +480,7 @@ view model =
                                                     )
                                                 ]
                                                 [ Html.button
-                                                    [ Attributes.class "p-2 w-full outline-none focus:text-white focus:bg-gray-700 active:bg-gray-800 active:transition-colors text-start group-hover:not-hover:focus:bg-gray-600 hover:not-focus:bg-gray-300"
+                                                    [ Attributes.class "py-2 px-4 w-full outline-none focus:text-white focus:bg-gray-700 active:bg-gray-800 active:transition-colors text-start group-hover:not-hover:focus:bg-gray-600 hover:not-focus:bg-gray-300"
                                                     , Attributes.tabindex -1
                                                     , Events.onBlur (UserBlurred (Listbox { index = i }))
                                                     , Events.onFocus (UserFocused (Listbox { index = i }))
