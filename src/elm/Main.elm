@@ -333,6 +333,7 @@ view model =
                             , highlightedMarker = okModel.highlightedRetailerId
                             , onMarkerMouseEnter = UserMouseEnteredMarker
                             , onMarkerMouseLeave = \_ -> UserMouseLeftMarker
+                            , accessToken = okModel.mapboxAccessToken
                             }
                         ]
                     , Html.div [ Attributes.class "overflow-auto h-full max-h-[12rem] @min-xl:max-h-full @min-xl:[grid-row:2] @min-xl:[grid-column:1]" ]

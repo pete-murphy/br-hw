@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-@source './**/*.{js,elm,ts,css,html}';
+@source "../../src/elm";
 
 @theme {
   --font-sans: GTUltra;

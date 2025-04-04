@@ -1,0 +1,45 @@
+---
+import Main from "../elm/Main.elm"
+import { getSecret } from "astro:env/server"
+import Layout from "../layouts/main.astro"
+import CustomElements from "../components/customElements.astro"
+
+const mapboxAccessToken = getSecret("MAPBOX_ACCESS_TOKEN")
+
+let mapboxSessionToken = await Astro.session?.get("session_id")
+if (!mapboxSessionToken) {
+  mapboxSessionToken = crypto.randomUUID()
+  Astro.session?.set("session_id", mapboxSessionToken)
+}
+---
+
+<Layout>
+  <CustomElements />
+  <Main
+    client:load
+    mapboxSessionToken={mapboxSessionToken}
+    mapboxAccessToken={mapboxAccessToken}
+  />
+  <script>
+    window.onElmInit = (elmModuleName: string, app: ElmApp) => {
+      if (elmModuleName === "Main") {
+        // Get the user's current position as soon as the app loads, and send it to Elm
+        window.navigator.geolocation.getCurrentPosition(
+          (currentPosition) => {
+            app.ports?.fromJs.send?.({
+              type: "CurrentPositionSuccess",
+              latitude: currentPosition.coords.latitude,
+              longitude: currentPosition.coords.longitude,
+            })
+          },
+          (error) => {
+            app.ports?.fromJs.send?.({
+              type: "CurrentPositionError",
+              error: error.message,
+            })
+          }
+        )
+      }
+    }
+  </script>
+</Layout>

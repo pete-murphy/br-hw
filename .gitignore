@@ -3,3 +3,4 @@ json/
 elm-stuff/
 .env
 .pre-commit-config.yaml
+.astro/

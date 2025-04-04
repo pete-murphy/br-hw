@@ -12,8 +12,8 @@ run:
         echo "You'll need an access token to run this project locally."
         exit 1
     fi
-    export VITE_APP_MAPBOX_ACCESS_TOKEN="$MAPBOX_ACCESS_TOKEN"
-    vite
+    export PUBLIC_MAPBOX_ACCESS_TOKEN="$MAPBOX_ACCESS_TOKEN"
+    astro dev
 
 sort flag="--write":
     #!/usr/bin/env bash
