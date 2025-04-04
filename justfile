@@ -15,7 +15,7 @@ run:
     export VITE_APP_MAPBOX_ACCESS_TOKEN="$MAPBOX_ACCESS_TOKEN"
     vite
 
-sort flag="--check-formatted":
+sort flag="--write":
     #!/usr/bin/env bash
     set -eu
     rustywind {{flag}} --custom-regex "\bclass[\s(<|]+\"([^\"]*)\"" .

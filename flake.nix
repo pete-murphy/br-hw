@@ -34,7 +34,7 @@
           prettier.enable = true; # For JS/TS files
           rustywind = {
             enable = true;
-            entry = "just sort";
+            entry = "just sort --check-formatted";
             pass_filenames = false;
           };
         };

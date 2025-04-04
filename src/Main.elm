@@ -185,36 +185,38 @@ view model =
                 [ Html.text ("Error: " ++ Decode.errorToString err) ]
 
         Ok okModel ->
-            Html.div [ Attributes.class "flex flex-wrap text-gray-950" ]
-                [ Html.div
-                    [ Attributes.class "max-w-xl min-w-sm grow" ]
-                    [ Html.map GotAutocompleteMsg
-                        (Autocomplete.view okModel.autocomplete)
-                    , case okModel.selectedLocation of
-                        RemoteData.NotAsked ->
-                            Html.text ""
+            Html.main_ [ Attributes.class "grid @container text-gray-950" ]
+                [ Html.div [ Attributes.class "grid grid-cols-1 gap-4 @min-xl:grid-cols-[auto_1fr]" ]
+                    [ Html.div
+                        [ Attributes.class "min-w-[clamp(18rem,_50cqi,_24rem)]" ]
+                        [ Html.map GotAutocompleteMsg
+                            (Autocomplete.view okModel.autocomplete)
+                        , case okModel.selectedLocation of
+                            RemoteData.NotAsked ->
+                                Html.text ""
 
-                        RemoteData.Loading ->
-                            Html.div
-                                [ Attributes.class "text-gray-700" ]
-                                [ Html.text "Loading..." ]
+                            RemoteData.Loading ->
+                                Html.div
+                                    [ Attributes.class "text-gray-700" ]
+                                    [ Html.text "Loading..." ]
 
-                        RemoteData.Failure _ ->
-                            Html.div
-                                [ Attributes.class "text-red-500" ]
-                                [ Html.text "Something went wrong!" ]
+                            RemoteData.Failure _ ->
+                                Html.div
+                                    [ Attributes.class "text-red-500" ]
+                                    [ Html.text "Something went wrong!" ]
 
-                        RemoteData.Success feature ->
-                            Html.div
-                                [ Attributes.class "" ]
-                                [ Html.text ("Success: " ++ Mapbox.name feature) ]
-                    ]
-                , Html.div [ Attributes.class "grid h-96 min-w-lg grow" ]
-                    [ MapboxGl.view
-                        { center =
-                            RemoteData.toMaybe okModel.selectedLocation
-                                |> Maybe.map Mapbox.coordinates
-                                |> Maybe.Extra.orElse (RemoteData.toMaybe okModel.userCurrentPosition)
-                        }
+                            RemoteData.Success feature ->
+                                Html.div
+                                    [ Attributes.class "" ]
+                                    [ Html.text ("Success: " ++ Mapbox.name feature) ]
+                        ]
+                    , Html.div [ Attributes.class "h-[50vh] min-h-[28rem]" ]
+                        [ MapboxGl.view
+                            { center =
+                                RemoteData.toMaybe okModel.selectedLocation
+                                    |> Maybe.map Mapbox.coordinates
+                                    |> Maybe.Extra.orElse (RemoteData.toMaybe okModel.userCurrentPosition)
+                            }
+                        ]
                     ]
                 ]
