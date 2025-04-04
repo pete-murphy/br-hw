@@ -12,6 +12,7 @@ import Accessibility.Aria as Aria
 import Accessibility.Live as Live
 import Accessibility.Role as Role
 import Api.Mapbox as Mapbox
+import ApiData exposing (ApiData)
 import Cmd.Extra
 import Debouncer exposing (Debouncer)
 import Html
@@ -20,7 +21,8 @@ import Html.Events as Events
 import Html.Events.Extra
 import Http
 import Json.Decode as Decode
-import RemoteData exposing (RemoteData(..), WebData)
+import Svg
+import Svg.Attributes
 
 
 type Focus
@@ -78,7 +80,7 @@ type CursorAction
 
 type alias Model =
     { value : Value
-    , searchResults : WebData (List (Mapbox.Feature Mapbox.Suggestion))
+    , searchResults : ApiData (List (Mapbox.Feature Mapbox.Suggestion))
     , pendingRequestId : Maybe String
     , debouncer : Debouncer String
     , focus : Focus
@@ -89,7 +91,7 @@ type alias Model =
 init : Model
 init =
     { value = InputText ""
-    , searchResults = NotAsked
+    , searchResults = ApiData.notAsked
     , pendingRequestId = Nothing
     , debouncer = Debouncer.init
     , focus = Elsewhere
@@ -162,10 +164,10 @@ update params msg model =
                 | searchResults =
                     case search of
                         "" ->
-                            NotAsked
+                            ApiData.notAsked
 
                         _ ->
-                            Loading
+                            ApiData.toLoading model.searchResults
                 , pendingRequestId =
                     case search of
                         "" ->
@@ -198,11 +200,11 @@ update params msg model =
             )
 
         UserPressedArrowDownKey ->
-            case model.searchResults of
-                Success [] ->
+            case ApiData.value model.searchResults of
+                ApiData.Success [] ->
                     ( model, Cmd.none, Nothing )
 
-                Success filteredOptions ->
+                ApiData.Success filteredOptions ->
                     ( { model | focus = incrementFocus (List.length filteredOptions) model.focus }, Cmd.none, Nothing )
 
                 _ ->
@@ -249,7 +251,7 @@ update params msg model =
 
         ApiRespondedWithSuggestions searchTerm result ->
             ( if model.pendingRequestId == Just searchTerm then
-                { model | searchResults = RemoteData.fromResult result }
+                { model | searchResults = ApiData.fromResult result }
 
               else
                 model
@@ -275,7 +277,7 @@ update params msg model =
         UserClearedInput ->
             ( { model
                 | value = InputText ""
-                , searchResults = NotAsked
+                , searchResults = ApiData.notAsked
                 , pendingRequestId = Nothing
                 , focus = Input
               }
@@ -307,8 +309,8 @@ view model =
             "autocomplete-options"
 
         isExpanded =
-            case ( model.searchResults, model.focus, model.value ) of
-                ( NotAsked, _, _ ) ->
+            case ( ApiData.value model.searchResults, model.focus, model.value ) of
+                ( ApiData.Empty, _, _ ) ->
                     False
 
                 ( _, Listbox _, _ ) ->
@@ -331,47 +333,83 @@ view model =
                 ]
                 [ Html.text "Find in-store" ]
             )
-            (inputFocusManager
-                { hasFocus = model.focus == Input
-                , cursorAction = model.cursorAction
-                }
-                [ Attributes.class "grid"
-                , Html.Events.Extra.onKeyDown
-                    (\key ->
-                        case key of
-                            Just "ArrowDown" ->
-                                UserPressedArrowDownKey
-
-                            Just "ArrowUp" ->
-                                UserPressedArrowUpKey
-
-                            Just "Escape" ->
-                                UserClearedInput
-
-                            _ ->
-                                NoOp
-                    )
+            (Html.div
+                [ Attributes.class "grid p-2 border border-gray-500 border-solid grid-cols-[1fr_auto] has-focus-visible:ring-4 has-focus-visible:ring-accent-600"
                 ]
-                [ Accessibility.inputText
-                    (case model.value of
-                        InputText search ->
-                            search
+                [ inputFocusManager
+                    { hasFocus = model.focus == Input
+                    , cursorAction = model.cursorAction
+                    }
+                    [ Attributes.class "grid"
+                    , Html.Events.Extra.onKeyDown
+                        (\key ->
+                            case key of
+                                Just "ArrowDown" ->
+                                    UserPressedArrowDownKey
 
-                        SelectedSuggestion suggestion ->
-                            Mapbox.name suggestion
-                    )
-                    [ Aria.owns [ listboxId ]
-                    , Aria.autoCompleteList
-                    , Role.comboBox
-                    , Attributes.placeholder "Enter a location"
-                    , Attributes.autocomplete False
-                    , Attributes.attribute "autocapitalize" "none"
-                    , Aria.expanded isExpanded
-                    , Events.onInput UserEnteredSearch
-                    , Events.onFocus (UserFocused Input)
-                    , Events.onBlur (UserBlurred Input)
-                    , Attributes.class "grid p-2 border border-gray-500 border-solid outline-none focus-visible:ring-4 placeholder:text-gray-500 focus-visible:ring-accent-600"
+                                Just "ArrowUp" ->
+                                    UserPressedArrowUpKey
+
+                                Just "Escape" ->
+                                    UserClearedInput
+
+                                _ ->
+                                    NoOp
+                        )
                     ]
+                    [ Accessibility.inputText
+                        (case model.value of
+                            InputText search ->
+                                search
+
+                            SelectedSuggestion suggestion ->
+                                Mapbox.name suggestion
+                        )
+                        [ Aria.owns [ listboxId ]
+                        , Aria.autoCompleteList
+                        , Role.comboBox
+                        , Attributes.placeholder "Enter a location"
+                        , Attributes.autocomplete False
+                        , Attributes.attribute "autocapitalize" "none"
+                        , Aria.expanded isExpanded
+                        , Events.onInput UserEnteredSearch
+                        , Events.onFocus (UserFocused Input)
+                        , Events.onBlur (UserBlurred Input)
+                        , Attributes.class "grid p-2 outline-none placeholder:text-gray-500"
+                        ]
+                    ]
+                , Html.div [ Attributes.class "grid items-center p-2" ]
+                    (if ApiData.isLoading model.searchResults then
+                        [ Svg.svg
+                            [ Svg.Attributes.viewBox "0 0 24 24"
+                            , Svg.Attributes.fill "currentColor"
+                            , Svg.Attributes.class "size-6"
+                            , Svg.Attributes.class "text-gray-600 animate-spin"
+                            ]
+                            [ Svg.path
+                                [ Svg.Attributes.fillRule "evenodd"
+                                , Svg.Attributes.d "M4.755 10.059a7.5 7.5 0 0 1 12.548-3.364l1.903 1.903h-3.183a.75.75 0 1 0 0 1.5h4.992a.75.75 0 0 0 .75-.75V4.356a.75.75 0 0 0-1.5 0v3.18l-1.9-1.9A9 9 0 0 0 3.306 9.67a.75.75 0 1 0 1.45.388Zm15.408 3.352a.75.75 0 0 0-.919.53 7.5 7.5 0 0 1-12.548 3.364l-1.902-1.903h3.183a.75.75 0 0 0 0-1.5H2.984a.75.75 0 0 0-.75.75v4.992a.75.75 0 0 0 1.5 0v-3.18l1.9 1.9a9 9 0 0 0 15.059-4.035.75.75 0 0 0-.53-.918Z"
+                                , Svg.Attributes.clipRule "evenodd"
+                                ]
+                                []
+                            ]
+                        ]
+
+                     else
+                        [ Svg.svg
+                            [ Svg.Attributes.viewBox "0 0 24 24"
+                            , Svg.Attributes.fill "currentColor"
+                            , Svg.Attributes.class "size-6"
+                            ]
+                            [ Svg.path
+                                [ Svg.Attributes.fillRule "evenodd"
+                                , Svg.Attributes.d "M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z"
+                                , Svg.Attributes.clipRule "evenodd"
+                                ]
+                                []
+                            ]
+                        ]
+                    )
                 ]
             )
         , Html.div
@@ -384,12 +422,12 @@ view model =
                 , Attributes.classList
                     [ ( "opacity-100 h-[calc-size(auto,_size)]", isExpanded ) ]
                 ]
-                [ case model.searchResults of
-                    Success [] ->
+                [ case ( ApiData.value model.searchResults, ApiData.isLoading model.searchResults ) of
+                    ( ApiData.Success [], _ ) ->
                         Html.div [ Attributes.class "p-2" ]
                             [ Html.text "No results found" ]
 
-                    Success results ->
+                    ( ApiData.Success results, _ ) ->
                         Html.ul []
                             (results
                                 |> List.indexedMap
@@ -459,15 +497,15 @@ view model =
                                     )
                             )
 
-                    Loading ->
+                    ( ApiData.Empty, True ) ->
                         Html.div [ Attributes.class "p-2" ]
                             [ Html.text "Loading..." ]
 
-                    NotAsked ->
+                    ( ApiData.Empty, False ) ->
                         Html.div [ Attributes.class "p-2 h-[1lh]" ]
                             [ Html.text "" ]
 
-                    Failure _ ->
+                    ( ApiData.HttpError _, _ ) ->
                         Html.div [ Attributes.class "p-2" ]
                             [ Html.text "Something went wrong!" ]
                 ]

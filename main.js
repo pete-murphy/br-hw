@@ -46,7 +46,7 @@ customElements.define(
     connectedCallback() {
       this.map = new MapboxGL.Map({
         container: this,
-        style: "mapbox://styles/pfmurphy/cm22iwfz900bx01qk1jtae58d",
+        style: "mapbox://styles/pfmurphy/cm926nnxe001v01qucyix2i3z",
         center: [0, 0],
         zoom: 2,
         accessToken: mapboxAccessToken,
@@ -59,10 +59,6 @@ customElements.define(
           new CustomEvent("load", {
             bubbles: true,
             composed: true,
-            detail: {
-              center: this.map.getCenter(),
-              bounds: this.map.getBounds(),
-            },
           }),
         );
       });
@@ -98,10 +94,9 @@ customElements.define(
       if (name === "center") {
         const center = JSON.parse(newValue);
         if (center.latitude != null && center.longitude != null) {
-          this.map?.flyTo({
+          this.map?.jumpTo({
             center: [center.longitude, center.latitude],
             zoom: 8,
-            essential: true,
           });
         }
       }

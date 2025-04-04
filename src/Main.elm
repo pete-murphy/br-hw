@@ -2,6 +2,7 @@ port module Main exposing (main)
 
 import Api.Coordinates as Coordinates exposing (Coordinates)
 import Api.Mapbox as Mapbox
+import ApiData exposing (ApiData)
 import Autocomplete
 import Browser
 import Html exposing (Html)
@@ -12,7 +13,7 @@ import Json.Decode.Pipeline as Pipeline
 import Json.Encode
 import MapboxGl
 import Maybe.Extra
-import RemoteData exposing (RemoteData, WebData)
+import RemoteData exposing (RemoteData)
 import Result.Extra
 
 
@@ -42,7 +43,7 @@ type alias OkModel =
     { autocomplete : Autocomplete.Model
     , mapboxAccessToken : String
     , mapboxSessionToken : String
-    , selectedLocation : WebData (Mapbox.Feature Mapbox.Retrieved)
+    , selectedLocation : ApiData (Mapbox.Feature Mapbox.Retrieved)
     , userCurrentPosition : RemoteData String Coordinates
     }
 
@@ -68,7 +69,7 @@ init flags =
                 { autocomplete = Autocomplete.init
                 , mapboxAccessToken = okFlags.mapboxAccessToken
                 , mapboxSessionToken = okFlags.mapboxSessionToken
-                , selectedLocation = RemoteData.NotAsked
+                , selectedLocation = ApiData.notAsked
                 , userCurrentPosition = RemoteData.NotAsked
                 }
             , Cmd.none
@@ -119,7 +120,7 @@ update msg model =
                             ( Ok
                                 { okModel
                                     | autocomplete = autocomplete
-                                    , selectedLocation = RemoteData.Loading
+                                    , selectedLocation = ApiData.toLoading okModel.selectedLocation
                                 }
                             , Cmd.batch
                                 [ Cmd.map GotAutocompleteMsg cmd
@@ -133,7 +134,7 @@ update msg model =
                             )
 
                 ApiRespondedWithRetrievedFeature result ->
-                    ( Ok { okModel | selectedLocation = RemoteData.fromResult result }
+                    ( Ok { okModel | selectedLocation = ApiData.fromResult result }
                     , Cmd.none
                     )
 
@@ -191,21 +192,21 @@ view model =
                         [ Attributes.class "min-w-[clamp(18rem,_50cqi,_24rem)]" ]
                         [ Html.map GotAutocompleteMsg
                             (Autocomplete.view okModel.autocomplete)
-                        , case okModel.selectedLocation of
-                            RemoteData.NotAsked ->
+                        , case ( ApiData.value okModel.selectedLocation, ApiData.isLoading okModel.selectedLocation ) of
+                            ( ApiData.Empty, False ) ->
                                 Html.text ""
 
-                            RemoteData.Loading ->
+                            ( ApiData.Empty, True ) ->
                                 Html.div
                                     [ Attributes.class "text-gray-700" ]
                                     [ Html.text "Loading..." ]
 
-                            RemoteData.Failure _ ->
+                            ( ApiData.HttpError _, _ ) ->
                                 Html.div
                                     [ Attributes.class "text-red-500" ]
                                     [ Html.text "Something went wrong!" ]
 
-                            RemoteData.Success feature ->
+                            ( ApiData.Success feature, _ ) ->
                                 Html.div
                                     [ Attributes.class "" ]
                                     [ Html.text ("Success: " ++ Mapbox.name feature) ]
@@ -213,7 +214,7 @@ view model =
                     , Html.div [ Attributes.class "h-[50vh] min-h-[28rem]" ]
                         [ MapboxGl.view
                             { center =
-                                RemoteData.toMaybe okModel.selectedLocation
+                                ApiData.toMaybe okModel.selectedLocation
                                     |> Maybe.map Mapbox.coordinates
                                     |> Maybe.Extra.orElse (RemoteData.toMaybe okModel.userCurrentPosition)
                             }
