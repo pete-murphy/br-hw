@@ -6,7 +6,7 @@
 
 - [x] List item styling: show distance & marker
 
-- [ ] Assure the markup is correct (use `<search>` landmark), add live region for combobox results
+- [x] Assure the markup is correct (use `<search>` landmark), add live region for combobox results
 
 - [ ] Move to Astro
 

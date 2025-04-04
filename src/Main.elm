@@ -1,5 +1,7 @@
 port module Main exposing (main)
 
+import Accessibility.Live as Live
+import Accessibility.Role as Role
 import Api.Boobook as Boobook
 import Api.Coordinates as Coordinates exposing (Coordinates, distanceInKm)
 import Api.Mapbox as Mapbox
@@ -372,6 +374,25 @@ view model =
                                                         ]
                                                 )
                                         )
+                                , Html.div
+                                    [ Attributes.class "sr-only"
+                                    , Live.polite
+                                    , Role.status
+                                    ]
+                                    [ case response.retailers of
+                                        [] ->
+                                            if isLoading then
+                                                Html.text "Loading nearby retailers..."
+
+                                            else
+                                                Html.text "No nearby retailers found."
+
+                                        _ ->
+                                            Html.text
+                                                (String.fromInt (List.length response.retailers)
+                                                    ++ " nearby retailers found."
+                                                )
+                                    ]
                                 , case retailersInView of
                                     [] ->
                                         if isLoading then

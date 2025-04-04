@@ -80,7 +80,7 @@ type CursorAction
 
 type alias Model =
     { value : Value
-    , searchResults : ApiData (List (Mapbox.Feature Mapbox.Suggestion))
+    , searchResults : ApiData { search : String, results : List (Mapbox.Feature Mapbox.Suggestion) }
     , pendingRequestId : Maybe String
     , debouncer : Debouncer String
     , focus : Focus
@@ -200,7 +200,7 @@ update params msg model =
             )
 
         UserPressedArrowDownKey ->
-            case ApiData.value model.searchResults of
+            case ApiData.value (model.searchResults |> ApiData.map .results) of
                 ApiData.Success [] ->
                     ( model, Cmd.none, Nothing )
 
@@ -251,7 +251,12 @@ update params msg model =
 
         ApiRespondedWithSuggestions searchTerm result ->
             ( if model.pendingRequestId == Just searchTerm then
-                { model | searchResults = ApiData.fromResult result }
+                { model
+                    | searchResults =
+                        ApiData.fromResult result
+                            |> ApiData.map
+                                (\results -> { search = searchTerm, results = results })
+                }
 
               else
                 model
@@ -325,7 +330,7 @@ view model =
                 ( _, _, _ ) ->
                     True
     in
-    Html.div
+    Html.node "search"
         [ Attributes.class "grid gap-2 p-2" ]
         [ Accessibility.labelBefore [ Attributes.class "grid gap-2 peer" ]
             (Html.h1
@@ -422,7 +427,7 @@ view model =
                 , Attributes.classList
                     [ ( "opacity-100 ease-in h-[calc-size(auto,_size)]", isExpanded ) ]
                 ]
-                [ case ( ApiData.value model.searchResults, ApiData.isLoading model.searchResults ) of
+                [ case ( ApiData.value (model.searchResults |> ApiData.map .results), ApiData.isLoading model.searchResults ) of
                     ( ApiData.Success [], _ ) ->
                         Html.div [ Attributes.class "p-2" ]
                             [ Html.text "No results found" ]
@@ -515,7 +520,18 @@ view model =
             , Live.polite
             , Role.status
             ]
-            [-- TODO: Implement live region
+            [ Html.text
+                (case ApiData.value model.searchResults of
+                    ApiData.Success { results, search } ->
+                        if results == [] then
+                            "No search results found for " ++ search
+
+                        else
+                            "Found " ++ String.fromInt (List.length results) ++ " results for " ++ search
+
+                    _ ->
+                        ""
+                )
             ]
         ]
 
