@@ -8,6 +8,7 @@ import Autocomplete
 import Browser
 import Html exposing (Html)
 import Html.Attributes as Attributes
+import Html.Events as Events
 import Html.Parser.Util
 import Http
 import Json.Decode as Decode
@@ -17,6 +18,8 @@ import MapboxGl
 import Maybe.Extra
 import RemoteData exposing (RemoteData)
 import Result.Extra
+import Svg
+import Svg.Attributes
 
 
 
@@ -48,6 +51,7 @@ type alias OkModel =
     , selectedLocation : ApiData (Mapbox.Feature Mapbox.Retrieved)
     , userCurrentPosition : RemoteData String Coordinates
     , nearbyRetailersResponse : ApiData Boobook.Response
+    , highlightedRetailerId : Maybe String
     , mapView : Maybe MapboxGl.MapView
     }
 
@@ -83,6 +87,7 @@ init flags =
                 , selectedLocation = ApiData.notAsked
                 , userCurrentPosition = RemoteData.NotAsked
                 , nearbyRetailersResponse = ApiData.notAsked
+                , highlightedRetailerId = Nothing
                 , mapView = Nothing
                 }
             , Cmd.none
@@ -105,6 +110,8 @@ type Msg
     | GotAutocompleteMsg Autocomplete.Msg
     | UserMovedMap MapboxGl.MapView
     | JsSentUserCurrentPosition (Result String Coordinates)
+    | UserMouseEnteredMarker String
+    | UserMouseLeftMarker
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -231,6 +238,16 @@ update msg model =
                         (ApiRespondedWithNearbyRetailers southwest)
                     )
 
+                UserMouseEnteredMarker id ->
+                    ( Ok { okModel | highlightedRetailerId = Just id }
+                    , Cmd.none
+                    )
+
+                UserMouseLeftMarker ->
+                    ( Ok { okModel | highlightedRetailerId = Nothing }
+                    , Cmd.none
+                    )
+
 
 
 -- SUBSCRIPTIONS
@@ -300,6 +317,9 @@ view model =
 
                                     Nothing ->
                                         []
+                            , highlightedMarker = okModel.highlightedRetailerId
+                            , onMarkerMouseEnter = UserMouseEnteredMarker
+                            , onMarkerMouseLeave = \_ -> UserMouseLeftMarker
                             }
                         ]
                     , Html.div [ Attributes.class "overflow-auto h-full max-h-[12rem] @min-xl:max-h-full @min-xl:[grid-row:2] @min-xl:[grid-column:1]" ]
@@ -335,23 +355,51 @@ view model =
                                                 |> List.map
                                                     (\retailer ->
                                                         Html.li
-                                                            [ Attributes.class "py-1 px-6" ]
-                                                            [ Html.h2 [ Attributes.class "" ]
-                                                                [ Html.text retailer.name ]
-                                                            , Html.address [ Attributes.class "text-sm not-italic font-light text-gray-700" ]
-                                                                (Html.Parser.Util.toVirtualDom
-                                                                    retailer.address
-                                                                )
+                                                            [ Attributes.class "py-1 px-6"
+                                                            , Events.onMouseEnter (UserMouseEnteredMarker retailer.id)
+                                                            , Events.onMouseLeave UserMouseLeftMarker
+                                                            ]
+                                                            [ Html.div [ Attributes.class "grid gap-2 grid-cols-[auto_1fr]" ]
+                                                                [ Html.div [ Attributes.class "" ]
+                                                                    [ Svg.svg
+                                                                        [ Svg.Attributes.viewBox "0 0 24 24"
+                                                                        , Svg.Attributes.fill "currentColor"
+                                                                        , Svg.Attributes.class "transition size-6"
+                                                                        , if Just retailer.id == okModel.highlightedRetailerId then
+                                                                            Svg.Attributes.class "text-accent-600"
+
+                                                                          else if Maybe.Extra.isJust okModel.highlightedRetailerId then
+                                                                            Svg.Attributes.class "opacity-25"
+
+                                                                          else
+                                                                            Svg.Attributes.class ""
+                                                                        ]
+                                                                        [ Svg.path
+                                                                            [ Svg.Attributes.fillRule "evenodd"
+                                                                            , Svg.Attributes.d "m11.54 22.351.07.04.028.016a.76.76 0 0 0 .723 0l.028-.015.071-.041a16.975 16.975 0 0 0 1.144-.742 19.58 19.58 0 0 0 2.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 0 0-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 0 0 2.682 2.282 16.975 16.975 0 0 0 1.145.742ZM12 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
+                                                                            , Svg.Attributes.clipRule "evenodd"
+                                                                            ]
+                                                                            []
+                                                                        ]
+                                                                    ]
+                                                                , Html.div []
+                                                                    [ Html.h2 [ Attributes.class "" ]
+                                                                        [ Html.text retailer.name ]
+                                                                    , Html.address [ Attributes.class "text-sm not-italic font-light text-gray-700" ]
+                                                                        (Html.Parser.Util.toVirtualDom
+                                                                            retailer.address
+                                                                        )
+                                                                    ]
+                                                                ]
                                                             ]
                                                     )
                                             )
                                 ]
                         )
                     ]
-
-                -- , Html.div
-                --     [ Attributes.class "font-mono text-sm text-gray-700 break-words pre"
-                --     ]
-                --     [ Html.text (Debug.toString okModel)
-                --     ]
+                , Html.div
+                    [ Attributes.class "font-mono text-sm text-gray-700 break-words pre"
+                    ]
+                    [ Html.text (Debug.toString okModel.highlightedRetailerId)
+                    ]
                 ]

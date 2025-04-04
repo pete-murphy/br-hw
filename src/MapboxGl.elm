@@ -73,6 +73,9 @@ view :
     { center : Maybe Coordinates
     , onMove : MapView -> msg
     , markers : List Marker
+    , highlightedMarker : Maybe String
+    , onMarkerMouseEnter : String -> msg
+    , onMarkerMouseLeave : String -> msg
     }
     -> Html msg
 view props =
@@ -83,10 +86,13 @@ view props =
 
             Just coordinates ->
                 centerAttribute coordinates
-        , Attributes.class "grid w-full h-full"
+        , Attributes.class "grid w-full h-full **:[.mapboxgl-marker]:!transition-colors **:[[data-highlighted=true]]:text-accent-600 **:[[data-highlighted=true]]:z-10 **:[[data-highlighted=false]]:text-gray-900/25"
         , Events.on "load" (decodeMapViewDetail |> Decode.map props.onMove)
         , Events.on "moveend" (decodeMapViewDetail |> Decode.map props.onMove)
         , markersAttribute props.markers
+        , highlightedMarkerAttribute props.highlightedMarker
+        , Events.on "marker-mouseenter" (Decode.at [ "detail", "id" ] Decode.string |> Decode.map props.onMarkerMouseEnter)
+        , Events.on "marker-mouseleave" (Decode.at [ "detail", "id" ] Decode.string |> Decode.map props.onMarkerMouseLeave)
 
         -- , Events.on "zoomend" (decodeMapViewDetail |> Decode.map props.onMove)
         ]
@@ -109,3 +115,13 @@ markersAttribute markers =
             Json.Encode.encode 0 (Json.Encode.list encodeMarker markers)
     in
     Attributes.attribute "markers" json
+
+
+highlightedMarkerAttribute : Maybe String -> Attribute msg
+highlightedMarkerAttribute highlightedMarker =
+    case highlightedMarker of
+        Nothing ->
+            Attributes.attribute "highlighted-marker" (Json.Encode.encode 0 (Json.Encode.string ""))
+
+        Just id ->
+            Attributes.attribute "highlighted-marker" (Json.Encode.encode 0 (Json.Encode.string id))

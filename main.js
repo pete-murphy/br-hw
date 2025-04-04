@@ -37,7 +37,7 @@ customElements.define(
   "mapbox-gl",
   class extends HTMLElement {
     static get observedAttributes() {
-      return ["center", "markers"]
+      return ["center", "markers", "highlighted-marker"]
     }
     constructor() {
       super()
@@ -129,13 +129,57 @@ customElements.define(
           el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
   <path fill-rule="evenodd" d="m11.54 22.351.07.04.028.016a.76.76 0 0 0 .723 0l.028-.015.071-.041a16.975 16.975 0 0 0 1.144-.742 19.58 19.58 0 0 0 2.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 0 0-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 0 0 2.682 2.282 16.975 16.975 0 0 0 1.145.742ZM12 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clip-rule="evenodd" />
 </svg>`
-          el.style.width = `1rem`
-          el.style.height = `1rem`
+          el.style.width = `1.5rem`
+          el.style.height = `1.5rem`
+          el.dataset.id = marker.id
+          el.onmouseenter = () => {
+            console.log("mouseover", marker.id)
+            this.dispatchEvent(
+              new CustomEvent("marker-mouseenter", {
+                bubbles: true,
+                composed: true,
+                detail: {
+                  id: marker.id,
+                },
+              })
+            )
+          }
+          el.onmouseleave = () => {
+            console.log("mouseout", marker.id)
+            this.dispatchEvent(
+              new CustomEvent("marker-mouseleave", {
+                bubbles: true,
+                composed: true,
+                detail: {
+                  id: marker.id,
+                },
+              })
+            )
+          }
 
-          const mapboxMarker = new MapboxGL.Marker(el)
+          const mapboxMarker = new MapboxGL.Marker({
+            element: el,
+            anchor: "bottom",
+          })
             .setLngLat([marker.longitude, marker.latitude])
             .addTo(this.map)
           this.markers.set(marker.id, mapboxMarker)
+        }
+      }
+      if (name === "highlighted-marker") {
+        const highlightedMarkerId = JSON.parse(newValue)
+        if (!highlightedMarkerId) {
+          this.markers.forEach((marker) => {
+            marker.getElement().dataset.highlighted = "none"
+          })
+        } else {
+          this.markers.forEach((marker, id) => {
+            if (id === highlightedMarkerId) {
+              marker.getElement().dataset.highlighted = "true"
+            } else {
+              marker.getElement().dataset.highlighted = "false"
+            }
+          })
         }
       }
     }

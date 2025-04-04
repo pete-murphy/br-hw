@@ -1,10 +1,16 @@
 - [x] Show the locations on the map
 
-- [ ] Add interaction (highlight on hover)
+- [x] Add interaction (highlight on hover)
 
-- [ ] De-dupe locations (by lat/long)
+- [ ] Assure the markup is correct (use `<search>` landmark), add live region for combobox results
+
+- [ ] Move to Astro
+
+---
 
 - [ ] List item styling: show distance & marker
+
+- [ ] De-dupe locations (by lat/long)
 
 - [ ] Show current user location on the map
 
@@ -21,7 +27,3 @@
   - [ ] New map styling
 
 - [ ] Scroll affordance (edge shadow)
-
-- [ ] Assure the markup is correct (use `<search>` landmark), add live region for combobox results
-
-- [ ] Move to Astro
