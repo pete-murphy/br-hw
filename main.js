@@ -1,11 +1,11 @@
-import Main from "./src/Main.elm";
-import MapboxGL from "mapbox-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
+import Main from "./src/Main.elm"
+import MapboxGL from "mapbox-gl"
+import "mapbox-gl/dist/mapbox-gl.css"
 
-const mapboxAccessToken = import.meta.env.VITE_APP_MAPBOX_ACCESS_TOKEN;
+const mapboxAccessToken = import.meta.env.VITE_APP_MAPBOX_ACCESS_TOKEN
 const mapboxSessionToken =
-  window.sessionStorage.getItem("session_id") ?? window.crypto.randomUUID();
-window.sessionStorage.setItem("session_id", mapboxSessionToken);
+  window.sessionStorage.getItem("session_id") ?? window.crypto.randomUUID()
+window.sessionStorage.setItem("session_id", mapboxSessionToken)
 
 let app = Main.init({
   node: document.getElementById("app"),
@@ -13,7 +13,7 @@ let app = Main.init({
     mapboxAccessToken,
     mapboxSessionToken,
   },
-});
+})
 
 // Get the user's current position as soon as the app loads, and send it to Elm
 window.navigator.geolocation.getCurrentPosition(
@@ -22,26 +22,26 @@ window.navigator.geolocation.getCurrentPosition(
       type: "CurrentPositionSuccess",
       latitude: currentPosition.coords.latitude,
       longitude: currentPosition.coords.longitude,
-    });
+    })
   },
   (error) => {
     app.ports.fromJs.send({
       type: "CurrentPositionError",
       error: error.message,
-    });
-  },
-);
+    })
+  }
+)
 
 // Mapbox GL custom element
 customElements.define(
   "mapbox-gl",
   class extends HTMLElement {
     static get observedAttributes() {
-      return ["center"];
+      return ["center", "markers"]
     }
     constructor() {
-      super();
-      this.map = null;
+      super()
+      this.map = null
     }
     connectedCallback() {
       this.map = new MapboxGL.Map({
@@ -52,7 +52,7 @@ customElements.define(
         accessToken: mapboxAccessToken,
         maxZoom: 16,
         minZoom: 2,
-      });
+      })
 
       this.map.on("load", () => {
         this.dispatchEvent(
@@ -63,9 +63,9 @@ customElements.define(
               center: this.map.getCenter().toArray(),
               bounds: this.map.getBounds().toArray(),
             },
-          }),
-        );
-      });
+          })
+        )
+      })
 
       this.map.on("moveend", () => {
         this.dispatchEvent(
@@ -76,9 +76,9 @@ customElements.define(
               center: this.map.getCenter().toArray(),
               bounds: this.map.getBounds().toArray(),
             },
-          }),
-        );
-      });
+          })
+        )
+      })
 
       this.map.on("zoomend", () => {
         this.dispatchEvent(
@@ -89,50 +89,50 @@ customElements.define(
               center: this.map.getCenter().toArray(),
               bounds: this.map.getBounds().toArray(),
             },
-          }),
-        );
-      });
+          })
+        )
+      })
     }
 
     attributeChangedCallback(name, _, newValue) {
       if (name === "center") {
-        const center = JSON.parse(newValue);
+        const center = JSON.parse(newValue)
         if (center.latitude != null && center.longitude != null) {
           this.map?.jumpTo({
             center: [center.longitude, center.latitude],
             zoom: 8,
-          });
+          })
         }
       }
     }
-  },
-);
+  }
+)
 
 // Custom element for managing focus of list item in the combobox listbox
 customElements.define(
   "li-focus-manager",
   class extends HTMLElement {
     static get observedAttributes() {
-      return ["has-focus"];
+      return ["has-focus"]
     }
     constructor() {
-      super();
+      super()
     }
 
     connectedCallback() {
       this.addEventListener("keydown", (e) => {
         if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-          e.preventDefault();
+          e.preventDefault()
         }
-      });
+      })
     }
 
     attributeChangedCallback(name, _, newValue) {
       if (name === "has-focus") {
         if (newValue == "true") {
-          this.firstElementChild.focus();
+          this.firstElementChild.focus()
         } else {
-          this.firstElementChild?.blur();
+          this.firstElementChild?.blur()
         }
       }
     }
@@ -143,69 +143,69 @@ customElements.define(
           new CustomEvent("remove", {
             bubbles: true,
             composed: true,
-          }),
-        );
+          })
+        )
       }
     }
-  },
-);
+  }
+)
 
 // Custom element for managing focus of combobox input
 customElements.define(
   "input-focus-manager",
   class extends HTMLElement {
     static get observedAttributes() {
-      return ["has-focus", "cursor-action"];
+      return ["has-focus", "cursor-action"]
     }
     constructor() {
-      super();
-      this.lastSelection = null;
+      super()
+      this.lastSelection = null
     }
 
     connectedCallback() {
       this.addEventListener("keydown", (e) => {
         if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-          e.preventDefault();
+          e.preventDefault()
         }
-      });
+      })
       this.firstElementChild.addEventListener("selectionchange", (e) => {
-        const start = this.firstElementChild.selectionStart;
-        const end = this.firstElementChild.selectionEnd;
-        this.lastSelection = { start, end };
-      });
+        const start = this.firstElementChild.selectionStart
+        const end = this.firstElementChild.selectionEnd
+        this.lastSelection = { start, end }
+      })
     }
 
     attributeChangedCallback(name, _, newValue) {
       if (name === "has-focus") {
         window.requestAnimationFrame(() => {
           if (newValue == "true") {
-            this.firstElementChild.focus();
+            this.firstElementChild.focus()
           } else {
-            this.firstElementChild?.blur();
+            this.firstElementChild?.blur()
           }
-        });
+        })
       }
       if (name === "cursor-action") {
         const start =
-          this.lastSelection?.start ?? this.firstElementChild.selectionStart;
+          this.lastSelection?.start ?? this.firstElementChild.selectionStart
         const end =
-          this.lastSelection?.end ?? this.firstElementChild.selectionEnd;
+          this.lastSelection?.end ?? this.firstElementChild.selectionEnd
 
         window.requestAnimationFrame(() => {
           if (newValue == "right") {
-            this.firstElementChild.setSelectionRange(start + 1, end + 1);
+            this.firstElementChild.setSelectionRange(start + 1, end + 1)
           }
           if (newValue == "left") {
-            this.firstElementChild.setSelectionRange(start - 1, end - 1);
+            this.firstElementChild.setSelectionRange(start - 1, end - 1)
           }
           this.dispatchEvent(
             new CustomEvent("reset", {
               bubbles: true,
               composed: true,
-            }),
-          );
-        });
+            })
+          )
+        })
       }
     }
-  },
-);
+  }
+)

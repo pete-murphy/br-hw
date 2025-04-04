@@ -31,7 +31,12 @@
         hooks = {
           alejandra.enable = true; # Nix formatter
           elm-format.enable = true;
-          prettier.enable = true; # For JS/TS files
+          prettier = {
+            enable = true;
+            exclude_types = ["json"];
+            settings.configPath = "./package.json";
+          };
+          # .enable = true; # For JS/TS files
           rustywind = {
             enable = true;
             entry = "just sort --check-formatted";

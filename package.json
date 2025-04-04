@@ -8,5 +8,11 @@
     "@tailwindcss/vite": "^4.1.1",
     "mapbox-gl": "^3.11.0",
     "tailwindcss": "^4.1.1"
+  },
+  "prettier": {
+    "singleQuote": false,
+    "trailingComma": "es5",
+    "tabWidth": 2,
+    "semi": false
   }
 }
