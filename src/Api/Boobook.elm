@@ -1,9 +1,13 @@
 module Api.Boobook exposing
-    ( getNearby
+    ( Response
+    , Retailer
+    , getNearby
     , testSuite
     )
 
 import Expect
+import Html.Parser
+import Html.Parser.Extra
 import Http
 import Json.Decode as Decode
 import Json.Decode.Pipeline as Pipeline
@@ -20,7 +24,7 @@ type alias Response =
 
 
 type alias Retailer =
-    { address : String
+    { address : List Html.Parser.Node
     , distanceInKms : Float
     , id : String
     , latitude : Float
@@ -62,7 +66,7 @@ decodeDistanceInKms =
 retailerDecoder : Decode.Decoder Retailer
 retailerDecoder =
     Decode.succeed Retailer
-        |> Pipeline.required "address" Decode.string
+        |> Pipeline.required "address" Html.Parser.Extra.decoder
         |> Pipeline.required "distance_in_kms" decodeDistanceInKms
         |> Pipeline.required "id" Decode.string
         |> Pipeline.required "latitude" Decode.float
@@ -82,19 +86,24 @@ builder =
 
 
 getNearby :
-    { latitude : Float, longitude : Float, radius : Int }
+    { latitude : Float, longitude : Float, radiusInMeters : Int }
     -> (Result Http.Error Response -> msg)
     -> Cmd msg
-getNearby { latitude, longitude, radius } mkMsg =
+getNearby params mkMsg =
     Http.request
         { method = "GET"
         , headers = []
         , url =
+            let
+                -- TODO: Unknown API so assuming 1000km is the max
+                thousandKm =
+                    1000 * 1000
+            in
             builder
                 [ "retailers", "nearby" ]
-                [ Url.Builder.string "latitude" (String.fromFloat latitude)
-                , Url.Builder.string "longitude" (String.fromFloat longitude)
-                , Url.Builder.int "radius" radius
+                [ Url.Builder.string "latitude" (String.fromFloat params.latitude)
+                , Url.Builder.string "longitude" (String.fromFloat params.longitude)
+                , Url.Builder.int "radius" (Basics.min thousandKm params.radiusInMeters)
                 ]
         , body = Http.emptyBody
         , tracker = Nothing

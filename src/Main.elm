@@ -1,5 +1,6 @@
 port module Main exposing (main)
 
+import Api.Boobook as Boobook
 import Api.Coordinates as Coordinates exposing (Coordinates)
 import Api.Mapbox as Mapbox
 import ApiData exposing (ApiData)
@@ -7,6 +8,7 @@ import Autocomplete
 import Browser
 import Html exposing (Html)
 import Html.Attributes as Attributes
+import Html.Parser.Util
 import Http
 import Json.Decode as Decode
 import Json.Decode.Pipeline as Pipeline
@@ -45,7 +47,16 @@ type alias OkModel =
     , mapboxSessionToken : String
     , selectedLocation : ApiData (Mapbox.Feature Mapbox.Retrieved)
     , userCurrentPosition : RemoteData String Coordinates
+    , nearbyRetailersResponse : ApiData Boobook.Response
+    , mapView : Maybe MapboxGl.MapView
     }
+
+
+centeredCoordinates : OkModel -> Maybe Coordinates
+centeredCoordinates okModel =
+    ApiData.toMaybe okModel.selectedLocation
+        |> Maybe.map Mapbox.coordinates
+        |> Maybe.Extra.orElse (RemoteData.toMaybe okModel.userCurrentPosition)
 
 
 type alias Flags =
@@ -71,6 +82,8 @@ init flags =
                 , mapboxSessionToken = okFlags.mapboxSessionToken
                 , selectedLocation = ApiData.notAsked
                 , userCurrentPosition = RemoteData.NotAsked
+                , nearbyRetailersResponse = ApiData.notAsked
+                , mapView = Nothing
                 }
             , Cmd.none
             )
@@ -88,7 +101,9 @@ init flags =
 type Msg
     = NoOp
     | ApiRespondedWithRetrievedFeature (Result Http.Error (Mapbox.Feature Mapbox.Retrieved))
+    | ApiRespondedWithNearbyRetailers Coordinates (Result Http.Error Boobook.Response)
     | GotAutocompleteMsg Autocomplete.Msg
+    | UserMovedMap MapboxGl.MapView
     | JsSentUserCurrentPosition (Result String Coordinates)
 
 
@@ -135,12 +150,85 @@ update msg model =
 
                 ApiRespondedWithRetrievedFeature result ->
                     ( Ok { okModel | selectedLocation = ApiData.fromResult result }
+                    , case Result.toMaybe result of
+                        Just feature ->
+                            let
+                                coordinates =
+                                    Mapbox.coordinates feature
+                            in
+                            Boobook.getNearby
+                                { latitude = coordinates.latitude
+                                , longitude = coordinates.longitude
+                                , radiusInMeters =
+                                    case Maybe.map .bounds okModel.mapView of
+                                        Just ( southwest, northeast ) ->
+                                            Basics.floor
+                                                (Coordinates.distanceInKm southwest northeast
+                                                    * 1000
+                                                    / 2
+                                                )
+
+                                        Nothing ->
+                                            1000
+                                }
+                                (ApiRespondedWithNearbyRetailers coordinates)
+
+                        Nothing ->
+                            Cmd.none
+                    )
+
+                ApiRespondedWithNearbyRetailers coordinates result ->
+                    -- if (Maybe.map .center okModel.mapView |> Maybe.Extra.orElse (centeredCoordinates okModel)) == Just coordinates then
+                    ( Ok { okModel | nearbyRetailersResponse = ApiData.fromResult result }
                     , Cmd.none
                     )
 
+                -- else
+                --     ( Ok okModel
+                --     , Cmd.none
+                --     )
                 JsSentUserCurrentPosition result ->
                     ( Ok { okModel | userCurrentPosition = RemoteData.fromResult result }
-                    , Cmd.none
+                    , case Result.toMaybe result of
+                        Just coordinates ->
+                            Boobook.getNearby
+                                { latitude = coordinates.latitude
+                                , longitude = coordinates.longitude
+                                , radiusInMeters =
+                                    case Maybe.map .bounds okModel.mapView of
+                                        Just ( southwest, northeast ) ->
+                                            Basics.floor
+                                                (Coordinates.distanceInKm southwest northeast
+                                                    * 1000
+                                                    / 2
+                                                )
+
+                                        Nothing ->
+                                            1000
+                                }
+                                (ApiRespondedWithNearbyRetailers coordinates)
+
+                        Nothing ->
+                            Cmd.none
+                    )
+
+                UserMovedMap mapView ->
+                    ( Ok { okModel | mapView = Just mapView }
+                    , let
+                        ( southwest, northeast ) =
+                            mapView.bounds
+                      in
+                      Boobook.getNearby
+                        { latitude = mapView.center.latitude
+                        , longitude = mapView.center.longitude
+                        , radiusInMeters =
+                            Basics.floor
+                                (Coordinates.distanceInKm southwest northeast
+                                    * 1000
+                                    / 2
+                                )
+                        }
+                        (ApiRespondedWithNearbyRetailers southwest)
                     )
 
 
@@ -187,37 +275,69 @@ view model =
 
         Ok okModel ->
             Html.main_ [ Attributes.class "grid @container text-gray-950" ]
-                [ Html.div [ Attributes.class "grid grid-cols-1 gap-4 @min-xl:grid-cols-[auto_1fr]" ]
-                    [ Html.div
-                        [ Attributes.class "min-w-[clamp(18rem,_50cqi,_24rem)]" ]
-                        [ Html.map GotAutocompleteMsg
-                            (Autocomplete.view okModel.autocomplete)
-                        , case ( ApiData.value okModel.selectedLocation, ApiData.isLoading okModel.selectedLocation ) of
-                            ( ApiData.Empty, False ) ->
-                                Html.text ""
-
-                            ( ApiData.Empty, True ) ->
-                                Html.div
-                                    [ Attributes.class "text-gray-700" ]
-                                    [ Html.text "Loading..." ]
-
-                            ( ApiData.HttpError _, _ ) ->
-                                Html.div
-                                    [ Attributes.class "text-red-500" ]
-                                    [ Html.text "Something went wrong!" ]
-
-                            ( ApiData.Success feature, _ ) ->
-                                Html.div
-                                    [ Attributes.class "" ]
-                                    [ Html.text ("Success: " ++ Mapbox.name feature) ]
+                [ Html.div [ Attributes.class "grid grid-cols-1 grid-flow-row @min-xl:grid-cols-[clamp(18rem,_50cqi,_24rem)_1fr] @min-xl:grid-rows-[auto_1fr] h-[50vh] min-h-[28rem]" ]
+                    [ Html.div [ Attributes.class "[grid-row:1] [grid-column:1]" ]
+                        [ Html.div [ Attributes.class "" ]
+                            [ Html.map GotAutocompleteMsg
+                                (Autocomplete.view okModel.autocomplete)
+                            ]
                         ]
-                    , Html.div [ Attributes.class "h-[50vh] min-h-[28rem]" ]
+                    , Html.div [ Attributes.class "[grid-column:2] [grid-row:1/span_2]" ]
                         [ MapboxGl.view
-                            { center =
-                                ApiData.toMaybe okModel.selectedLocation
-                                    |> Maybe.map Mapbox.coordinates
-                                    |> Maybe.Extra.orElse (RemoteData.toMaybe okModel.userCurrentPosition)
+                            { center = centeredCoordinates okModel
+                            , onMove = UserMovedMap
                             }
                         ]
+                    , Html.div [ Attributes.class "overflow-auto h-full [grid-row:2] [grid-column:1]" ]
+                        (case ( ApiData.value okModel.nearbyRetailersResponse, ApiData.isLoading okModel.nearbyRetailersResponse ) of
+                            ( ApiData.Empty, False ) ->
+                                []
+
+                            ( ApiData.Empty, True ) ->
+                                [ Html.div
+                                    [ Attributes.class "text-gray-700" ]
+                                    [ Html.text "Loading nearby retailers..." ]
+                                ]
+
+                            ( ApiData.HttpError _, _ ) ->
+                                [ Html.div
+                                    [ Attributes.class "text-red-500" ]
+                                    [ Html.text "Something went wrong!" ]
+                                ]
+
+                            ( ApiData.Success response, _ ) ->
+                                [ if List.length response.problems == 0 then
+                                    Html.text ""
+
+                                  else
+                                    Html.text (Debug.toString response.problems)
+                                , case response.retailers of
+                                    [] ->
+                                        Html.text "No nearby retailers found."
+
+                                    _ ->
+                                        Html.ul [ Attributes.class "grid gap-1" ]
+                                            (response.retailers
+                                                |> List.map
+                                                    (\retailer ->
+                                                        Html.li
+                                                            [ Attributes.class "py-1 px-6" ]
+                                                            [ Html.h2 [ Attributes.class "" ]
+                                                                [ Html.text retailer.name ]
+                                                            , Html.address [ Attributes.class "text-sm not-italic font-light text-gray-700" ]
+                                                                (Html.Parser.Util.toVirtualDom
+                                                                    retailer.address
+                                                                )
+                                                            ]
+                                                    )
+                                            )
+                                ]
+                        )
                     ]
+
+                -- , Html.div
+                --     [ Attributes.class "font-mono text-sm text-gray-700 break-words pre"
+                --     ]
+                --     [ Html.text (Debug.toString okModel)
+                --     ]
                 ]

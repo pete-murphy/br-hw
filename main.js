@@ -59,6 +59,10 @@ customElements.define(
           new CustomEvent("load", {
             bubbles: true,
             composed: true,
+            detail: {
+              center: this.map.getCenter().toArray(),
+              bounds: this.map.getBounds().toArray(),
+            },
           }),
         );
       });
@@ -69,8 +73,8 @@ customElements.define(
             bubbles: true,
             composed: true,
             detail: {
-              center: this.map.getCenter(),
-              bounds: this.map.getBounds(),
+              center: this.map.getCenter().toArray(),
+              bounds: this.map.getBounds().toArray(),
             },
           }),
         );
@@ -82,8 +86,8 @@ customElements.define(
             bubbles: true,
             composed: true,
             detail: {
-              center: this.map.getCenter(),
-              bounds: this.map.getBounds(),
+              center: this.map.getCenter().toArray(),
+              bounds: this.map.getBounds().toArray(),
             },
           }),
         );

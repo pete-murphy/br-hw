@@ -328,8 +328,8 @@ view model =
     Html.div
         [ Attributes.class "grid gap-2 p-2" ]
         [ Accessibility.labelBefore [ Attributes.class "grid gap-2 peer" ]
-            (Html.span
-                [ Attributes.class "text-sm font-semibold tracking-wide uppercase"
+            (Html.h1
+                [ Attributes.class "px-4 text-sm font-semibold tracking-widest uppercase"
                 ]
                 [ Html.text "Find in-store" ]
             )
