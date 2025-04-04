@@ -374,51 +374,57 @@ view model =
                                                 [ Html.text "No nearby retailers found." ]
 
                                     _ ->
-                                        Html.ul [ Attributes.class "grid gap-1 py-1" ]
+                                        Html.ul [ Attributes.class "grid gap-1 py-1 scroll-m-1" ]
                                             (retailersInView
                                                 |> List.map
                                                     (\retailer ->
+                                                        let
+                                                            isHighlighted =
+                                                                Just retailer.id == okModel.highlightedRetailerId
+                                                        in
                                                         Html.li
                                                             [ Attributes.class "py-1 px-6"
                                                             , Events.onMouseEnter (UserMouseEnteredMarker retailer.id)
                                                             , Events.onMouseLeave UserMouseLeftMarker
                                                             ]
-                                                            [ Html.div [ Attributes.class "grid gap-2 grid-cols-[auto_1fr_auto]" ]
-                                                                [ Html.div [ Attributes.class "" ]
-                                                                    [ Svg.svg
-                                                                        [ Svg.Attributes.viewBox "0 0 24 24"
-                                                                        , Svg.Attributes.fill "currentColor"
-                                                                        , Svg.Attributes.class "transition size-6"
-                                                                        , if Just retailer.id == okModel.highlightedRetailerId then
-                                                                            Svg.Attributes.class "text-accent-600"
+                                                            [ scrollIntoView isHighlighted
+                                                                (Html.div [ Attributes.class "grid gap-2 grid-cols-[auto_1fr_auto]" ]
+                                                                    [ Html.div [ Attributes.class "" ]
+                                                                        [ Svg.svg
+                                                                            [ Svg.Attributes.viewBox "0 0 24 24"
+                                                                            , Svg.Attributes.fill "currentColor"
+                                                                            , Svg.Attributes.class "transition size-6"
+                                                                            , if isHighlighted then
+                                                                                Svg.Attributes.class "text-accent-600"
 
-                                                                          else if Maybe.Extra.isJust okModel.highlightedRetailerId then
-                                                                            Svg.Attributes.class "opacity-25"
+                                                                              else if Maybe.Extra.isJust okModel.highlightedRetailerId then
+                                                                                Svg.Attributes.class "opacity-25"
 
-                                                                          else
-                                                                            Svg.Attributes.class ""
-                                                                        ]
-                                                                        [ Svg.path
-                                                                            [ Svg.Attributes.fillRule "evenodd"
-                                                                            , Svg.Attributes.d "m11.54 22.351.07.04.028.016a.76.76 0 0 0 .723 0l.028-.015.071-.041a16.975 16.975 0 0 0 1.144-.742 19.58 19.58 0 0 0 2.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 0 0-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 0 0 2.682 2.282 16.975 16.975 0 0 0 1.145.742ZM12 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
-                                                                            , Svg.Attributes.clipRule "evenodd"
+                                                                              else
+                                                                                Svg.Attributes.class ""
                                                                             ]
+                                                                            [ Svg.path
+                                                                                [ Svg.Attributes.fillRule "evenodd"
+                                                                                , Svg.Attributes.d "m11.54 22.351.07.04.028.016a.76.76 0 0 0 .723 0l.028-.015.071-.041a16.975 16.975 0 0 0 1.144-.742 19.58 19.58 0 0 0 2.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 0 0-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 0 0 2.682 2.282 16.975 16.975 0 0 0 1.145.742ZM12 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
+                                                                                , Svg.Attributes.clipRule "evenodd"
+                                                                                ]
+                                                                                []
+                                                                            ]
+                                                                        ]
+                                                                    , Html.div [ Attributes.class "grid gap-0.5" ]
+                                                                        [ Html.h2 [ Attributes.class "" ]
+                                                                            [ Html.text retailer.name ]
+                                                                        , Html.address [ Attributes.class "text-sm not-italic font-light text-gray-700" ]
+                                                                            (Html.Parser.Util.toVirtualDom
+                                                                                retailer.address
+                                                                            )
+                                                                        ]
+                                                                    , Html.div [ Attributes.class "text-sm font-light text-gray-700" ]
+                                                                        [ distanceFormatter { distanceInKms = retailer.distanceInKms }
                                                                             []
                                                                         ]
                                                                     ]
-                                                                , Html.div [ Attributes.class "grid gap-0.5" ]
-                                                                    [ Html.h2 [ Attributes.class "" ]
-                                                                        [ Html.text retailer.name ]
-                                                                    , Html.address [ Attributes.class "text-sm not-italic font-light text-gray-700" ]
-                                                                        (Html.Parser.Util.toVirtualDom
-                                                                            retailer.address
-                                                                        )
-                                                                    ]
-                                                                , Html.div [ Attributes.class "text-sm font-light text-gray-700" ]
-                                                                    [ distanceFormatter { distanceInKms = retailer.distanceInKms }
-                                                                        []
-                                                                    ]
-                                                                ]
+                                                                )
                                                             ]
                                                     )
                                             )
@@ -443,3 +449,17 @@ distanceFormatter { distanceInKms } attrs =
             :: attrs
         )
         []
+
+
+scrollIntoView : Bool -> Html msg -> Html msg
+scrollIntoView scroll children =
+    Html.node "scroll-into-view"
+        [ Attributes.attribute "scroll"
+            (if scroll then
+                "true"
+
+             else
+                "false"
+            )
+        ]
+        [ children ]

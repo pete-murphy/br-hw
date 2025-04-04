@@ -318,3 +318,32 @@ customElements.define(
     }
   }
 )
+
+// Custom element for scrolling item into view
+customElements.define(
+  "scroll-into-view",
+  class extends HTMLElement {
+    static get observedAttributes() {
+      return ["scroll"]
+    }
+    constructor() {
+      super()
+    }
+
+    attributeChangedCallback(name, _, newValue) {
+      if (name === "scroll") {
+        if (newValue == "true") {
+          this.scrollIntoView({
+            block: "nearest",
+            inline: "nearest",
+            behavior: window.matchMedia(
+              "(prefers-reduced-motion: no-preference)"
+            )
+              ? "smooth"
+              : "auto",
+          })
+        }
+      }
+    }
+  }
+)
