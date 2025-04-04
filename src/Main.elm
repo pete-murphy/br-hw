@@ -3,7 +3,7 @@ port module Main exposing (main)
 import Accessibility.Live as Live
 import Accessibility.Role as Role
 import Api.Boobook as Boobook
-import Api.Coordinates as Coordinates exposing (Coordinates, distanceInKm)
+import Api.Coordinates as Coordinates exposing (Coordinates)
 import Api.Mapbox as Mapbox
 import ApiData exposing (ApiData)
 import Autocomplete
@@ -186,16 +186,11 @@ update msg model =
                             Cmd.none
                     )
 
-                ApiRespondedWithNearbyRetailers coordinates result ->
-                    -- if (Maybe.map .center okModel.mapView |> Maybe.Extra.orElse (centeredCoordinates okModel)) == Just coordinates then
+                ApiRespondedWithNearbyRetailers _ result ->
                     ( Ok { okModel | nearbyRetailersResponse = ApiData.fromResult result }
                     , Cmd.none
                     )
 
-                -- else
-                --     ( Ok okModel
-                --     , Cmd.none
-                --     )
                 JsSentUserCurrentPosition result ->
                     ( Ok { okModel | userCurrentPosition = RemoteData.fromResult result }
                     , case Result.toMaybe result of
