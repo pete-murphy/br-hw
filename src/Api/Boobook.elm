@@ -18,7 +18,7 @@ import Url.Extra
 
 
 type alias Response =
-    { problems : List Decode.Value
+    { problems : List Problem
     , retailers : List Retailer
     }
 
@@ -35,6 +35,12 @@ type alias Retailer =
     }
 
 
+type alias Problem =
+    { detail : String
+    , title : String
+    }
+
+
 
 -- DECODERS
 
@@ -42,7 +48,7 @@ type alias Retailer =
 responseDecoder : Decode.Decoder Response
 responseDecoder =
     Decode.succeed Response
-        |> Pipeline.required "problems" (Decode.list Decode.value)
+        |> Pipeline.required "problems" (Decode.list problemDecoder)
         |> Pipeline.required "retailers" (Decode.list retailerDecoder)
 
 
@@ -74,6 +80,13 @@ retailerDecoder =
         |> Pipeline.required "name" Decode.string
         |> Pipeline.optional "phone_number" (Decode.maybe Decode.string) Nothing
         |> Pipeline.optional "website" (Decode.maybe Url.Extra.decoder) Nothing
+
+
+problemDecoder : Decode.Decoder Problem
+problemDecoder =
+    Decode.succeed Problem
+        |> Pipeline.required "detail" Decode.string
+        |> Pipeline.required "title" Decode.string
 
 
 

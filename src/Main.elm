@@ -360,7 +360,18 @@ view model =
                                     Html.text ""
 
                                   else
-                                    Html.text (Debug.toString response.problems)
+                                    Html.ul
+                                        [ Attributes.class "py-2 px-6 text-red-500" ]
+                                        (response.problems
+                                            |> List.map
+                                                (\problem ->
+                                                    Html.li
+                                                        [ Attributes.class "" ]
+                                                        [ Html.div [] [ Html.text problem.title ]
+                                                        , Html.div [] [ Html.text problem.detail ]
+                                                        ]
+                                                )
+                                        )
                                 , case retailersInView of
                                     [] ->
                                         if isLoading then
