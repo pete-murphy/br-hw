@@ -53,6 +53,11 @@ customElements.define(
         accessToken: mapboxAccessToken,
         maxZoom: 16,
         minZoom: 2,
+      }).setPadding({
+        top: 10,
+        right: 10,
+        bottom: 10,
+        left: 10,
       })
 
       this.map.on("load", () => {
@@ -283,6 +288,32 @@ customElements.define(
             })
           )
         })
+      }
+    }
+  }
+)
+
+// A custom element for pretty-printing distance as km
+customElements.define(
+  "distance-formatter",
+  class extends HTMLElement {
+    static get observedAttributes() {
+      return ["distance"]
+    }
+    constructor() {
+      super()
+    }
+
+    attributeChangedCallback(name, _, newValue) {
+      if (name === "distance") {
+        const distance = parseFloat(newValue)
+        const formatter = new Intl.NumberFormat(undefined, {
+          style: "unit",
+          unit: "kilometer",
+          unitDisplay: "short",
+          maximumFractionDigits: 1,
+        })
+        this.innerText = formatter.format(distance)
       }
     }
   }

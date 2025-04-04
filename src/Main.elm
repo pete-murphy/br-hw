@@ -1,12 +1,12 @@
 port module Main exposing (main)
 
 import Api.Boobook as Boobook
-import Api.Coordinates as Coordinates exposing (Coordinates)
+import Api.Coordinates as Coordinates exposing (Coordinates, distanceInKm)
 import Api.Mapbox as Mapbox
 import ApiData exposing (ApiData)
 import Autocomplete
 import Browser
-import Html exposing (Html)
+import Html exposing (Attribute, Html)
 import Html.Attributes as Attributes
 import Html.Events as Events
 import Html.Parser.Util
@@ -291,6 +291,27 @@ view model =
                 [ Html.text ("Error: " ++ Decode.errorToString err) ]
 
         Ok okModel ->
+            let
+                retailersInView =
+                    case ( ApiData.toMaybe okModel.nearbyRetailersResponse, okModel.mapView ) of
+                        ( Just response, Just { bounds } ) ->
+                            response.retailers
+                                |> List.filter
+                                    (\retailer ->
+                                        let
+                                            ( southwest, northeast ) =
+                                                bounds
+                                        in
+                                        Coordinates.isInBounds
+                                            { latitude = retailer.latitude
+                                            , longitude = retailer.longitude
+                                            }
+                                            { southwest = southwest, northeast = northeast }
+                                    )
+
+                        _ ->
+                            []
+            in
             Html.main_ [ Attributes.class "grid @container text-gray-950" ]
                 [ Html.div [ Attributes.class "grid grid-cols-1 grid-flow-row @min-xl:grid-cols-[clamp(18rem,_50cqi,_24rem)_1fr] @min-xl:grid-rows-[auto_1fr] @min-xl:h-[50vh] min-h-[28rem]" ]
                     [ Html.div [ Attributes.class "@min-xl:[grid-row:1] @min-xl:[grid-column:1]" ]
@@ -304,19 +325,14 @@ view model =
                             { center = centeredCoordinates okModel
                             , onMove = UserMovedMap
                             , markers =
-                                case ApiData.toMaybe okModel.nearbyRetailersResponse of
-                                    Just response ->
-                                        response.retailers
-                                            |> List.map
-                                                (\retailer ->
-                                                    { id = retailer.id
-                                                    , latitude = retailer.latitude
-                                                    , longitude = retailer.longitude
-                                                    }
-                                                )
-
-                                    Nothing ->
-                                        []
+                                retailersInView
+                                    |> List.map
+                                        (\retailer ->
+                                            { id = retailer.id
+                                            , latitude = retailer.latitude
+                                            , longitude = retailer.longitude
+                                            }
+                                        )
                             , highlightedMarker = okModel.highlightedRetailerId
                             , onMarkerMouseEnter = UserMouseEnteredMarker
                             , onMarkerMouseLeave = \_ -> UserMouseLeftMarker
@@ -329,29 +345,37 @@ view model =
 
                             ( ApiData.Empty, True ) ->
                                 [ Html.div
-                                    [ Attributes.class "text-gray-700" ]
+                                    [ Attributes.class "py-2 px-6 text-gray-700" ]
                                     [ Html.text "Loading nearby retailers..." ]
                                 ]
 
                             ( ApiData.HttpError _, _ ) ->
                                 [ Html.div
-                                    [ Attributes.class "text-red-500" ]
+                                    [ Attributes.class "py-2 px-6 text-red-500" ]
                                     [ Html.text "Something went wrong!" ]
                                 ]
 
-                            ( ApiData.Success response, _ ) ->
+                            ( ApiData.Success response, isLoading ) ->
                                 [ if List.length response.problems == 0 then
                                     Html.text ""
 
                                   else
                                     Html.text (Debug.toString response.problems)
-                                , case response.retailers of
+                                , case retailersInView of
                                     [] ->
-                                        Html.text "No nearby retailers found."
+                                        if isLoading then
+                                            Html.div
+                                                [ Attributes.class "py-2 px-6 text-gray-700" ]
+                                                [ Html.text "Loading nearby retailers..." ]
+
+                                        else
+                                            Html.div
+                                                [ Attributes.class "py-2 px-6 text-gray-700" ]
+                                                [ Html.text "No nearby retailers found." ]
 
                                     _ ->
                                         Html.ul [ Attributes.class "grid gap-1 py-1" ]
-                                            (response.retailers
+                                            (retailersInView
                                                 |> List.map
                                                     (\retailer ->
                                                         Html.li
@@ -359,7 +383,7 @@ view model =
                                                             , Events.onMouseEnter (UserMouseEnteredMarker retailer.id)
                                                             , Events.onMouseLeave UserMouseLeftMarker
                                                             ]
-                                                            [ Html.div [ Attributes.class "grid gap-2 grid-cols-[auto_1fr]" ]
+                                                            [ Html.div [ Attributes.class "grid gap-2 grid-cols-[auto_1fr_auto]" ]
                                                                 [ Html.div [ Attributes.class "" ]
                                                                     [ Svg.svg
                                                                         [ Svg.Attributes.viewBox "0 0 24 24"
@@ -382,13 +406,17 @@ view model =
                                                                             []
                                                                         ]
                                                                     ]
-                                                                , Html.div []
+                                                                , Html.div [ Attributes.class "grid gap-0.5" ]
                                                                     [ Html.h2 [ Attributes.class "" ]
                                                                         [ Html.text retailer.name ]
                                                                     , Html.address [ Attributes.class "text-sm not-italic font-light text-gray-700" ]
                                                                         (Html.Parser.Util.toVirtualDom
                                                                             retailer.address
                                                                         )
+                                                                    ]
+                                                                , Html.div [ Attributes.class "text-sm font-light text-gray-700" ]
+                                                                    [ distanceFormatter { distanceInKms = retailer.distanceInKms }
+                                                                        []
                                                                     ]
                                                                 ]
                                                             ]
@@ -403,3 +431,15 @@ view model =
                     [ Html.text (Debug.toString okModel.highlightedRetailerId)
                     ]
                 ]
+
+
+distanceFormatter :
+    { distanceInKms : Float }
+    -> List (Attribute msg)
+    -> Html msg
+distanceFormatter { distanceInKms } attrs =
+    Html.node "distance-formatter"
+        (Attributes.attribute "distance" (String.fromFloat distanceInKms)
+            :: attrs
+        )
+        []

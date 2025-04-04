@@ -2,13 +2,15 @@
 
 - [x] Add interaction (highlight on hover)
 
+- [x] Filter locations to what is in bounds of mapview
+
+- [x] List item styling: show distance & marker
+
 - [ ] Assure the markup is correct (use `<search>` landmark), add live region for combobox results
 
 - [ ] Move to Astro
 
 ---
-
-- [ ] List item styling: show distance & marker
 
 - [ ] De-dupe locations (by lat/long)
 

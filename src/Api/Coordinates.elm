@@ -3,6 +3,7 @@ module Api.Coordinates exposing
     , decoder
     , distanceInKm
     , encode
+    , isInBounds
     , testSuite
     )
 
@@ -19,15 +20,14 @@ type alias Coordinates =
     }
 
 
-type Bounds
-    = Bounds
-        { southwest : Coordinates
-        , northeast : Coordinates
-        }
+type alias Bounds =
+    { southwest : Coordinates
+    , northeast : Coordinates
+    }
 
 
 isInBounds : Coordinates -> Bounds -> Bool
-isInBounds coordinates (Bounds { southwest, northeast }) =
+isInBounds coordinates { southwest, northeast } =
     coordinates.latitude
         >= southwest.latitude
         && coordinates.latitude
@@ -103,10 +103,9 @@ testSuite =
                 \_ ->
                     let
                         bounds =
-                            Bounds
-                                { southwest = { latitude = 0, longitude = 0 }
-                                , northeast = { latitude = 10, longitude = 10 }
-                                }
+                            { southwest = { latitude = 0, longitude = 0 }
+                            , northeast = { latitude = 10, longitude = 10 }
+                            }
 
                         point =
                             { latitude = 5, longitude = 5 }
@@ -117,10 +116,9 @@ testSuite =
                 \_ ->
                     let
                         bounds =
-                            Bounds
-                                { southwest = { latitude = 0, longitude = 0 }
-                                , northeast = { latitude = 10, longitude = 10 }
-                                }
+                            { southwest = { latitude = 0, longitude = 0 }
+                            , northeast = { latitude = 10, longitude = 10 }
+                            }
 
                         point =
                             { latitude = 15, longitude = 5 }
@@ -131,10 +129,9 @@ testSuite =
                 \_ ->
                     let
                         bounds =
-                            Bounds
-                                { southwest = { latitude = 0, longitude = 0 }
-                                , northeast = { latitude = 10, longitude = 10 }
-                                }
+                            { southwest = { latitude = 0, longitude = 0 }
+                            , northeast = { latitude = 10, longitude = 10 }
+                            }
 
                         point =
                             { latitude = -5, longitude = 5 }
@@ -145,10 +142,9 @@ testSuite =
                 \_ ->
                     let
                         bounds =
-                            Bounds
-                                { southwest = { latitude = 0, longitude = 0 }
-                                , northeast = { latitude = 10, longitude = 10 }
-                                }
+                            { southwest = { latitude = 0, longitude = 0 }
+                            , northeast = { latitude = 10, longitude = 10 }
+                            }
 
                         point =
                             { latitude = 5, longitude = 15 }
@@ -159,10 +155,9 @@ testSuite =
                 \_ ->
                     let
                         bounds =
-                            Bounds
-                                { southwest = { latitude = 0, longitude = 0 }
-                                , northeast = { latitude = 10, longitude = 10 }
-                                }
+                            { southwest = { latitude = 0, longitude = 0 }
+                            , northeast = { latitude = 10, longitude = 10 }
+                            }
 
                         point =
                             { latitude = 5, longitude = -5 }
@@ -173,10 +168,9 @@ testSuite =
                 \_ ->
                     let
                         bounds =
-                            Bounds
-                                { southwest = { latitude = 0, longitude = 0 }
-                                , northeast = { latitude = 10, longitude = 10 }
-                                }
+                            { southwest = { latitude = 0, longitude = 0 }
+                            , northeast = { latitude = 10, longitude = 10 }
+                            }
 
                         point =
                             { latitude = 0, longitude = 0 }
