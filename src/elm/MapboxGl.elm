@@ -95,8 +95,6 @@ view props =
         , Events.on "marker-mouseenter" (Decode.at [ "detail", "id" ] Decode.string |> Decode.map props.onMarkerMouseEnter)
         , Events.on "marker-mouseleave" (Decode.at [ "detail", "id" ] Decode.string |> Decode.map props.onMarkerMouseLeave)
         , Attributes.attribute "access-token" props.accessToken
-
-        -- , Events.on "zoomend" (decodeMapViewDetail |> Decode.map props.onMove)
         ]
         []
 

@@ -12,7 +12,9 @@ customElements.define(
       super()
       this.map = null
       this.markers = new Map()
+      this.moveendTimeout = null
     }
+
     connectedCallback() {
       this.map = new MapboxGL.Map({
         container: this,
@@ -43,30 +45,28 @@ customElements.define(
         )
       })
 
-      this.map.on("moveend", () => {
-        this.dispatchEvent(
-          new CustomEvent("moveend", {
-            bubbles: true,
-            composed: true,
-            detail: {
-              center: this.map.getCenter().toArray(),
-              bounds: this.map.getBounds().toArray(),
-            },
-          })
-        )
+      this.map.on("movestart", () => {
+        if (this.moveendTimeout) {
+          clearTimeout(this.moveendTimeout)
+        }
       })
 
-      this.map.on("zoomend", () => {
-        this.dispatchEvent(
-          new CustomEvent("zoomend", {
-            bubbles: true,
-            composed: true,
-            detail: {
-              center: this.map.getCenter().toArray(),
-              bounds: this.map.getBounds().toArray(),
-            },
-          })
-        )
+      this.map.on("moveend", () => {
+        if (this.moveendTimeout) {
+          clearTimeout(this.moveendTimeout)
+        }
+        this.moveendTimeout = setTimeout(() => {
+          this.dispatchEvent(
+            new CustomEvent("moveend", {
+              bubbles: true,
+              composed: true,
+              detail: {
+                center: this.map.getCenter().toArray(),
+                bounds: this.map.getBounds().toArray(),
+              },
+            })
+          )
+        }, 300)
       })
     }
 
