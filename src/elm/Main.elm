@@ -49,7 +49,7 @@ type alias Model =
 type alias OkModel =
     { autocomplete : Autocomplete.Model
     , mapboxAccessToken : String
-    , mapboxSessionToken : String
+    , mapboxSessionToken : Maybe String
     , selectedLocation : ApiData (Mapbox.Feature Mapbox.Retrieved)
     , userCurrentPosition : RemoteData String Coordinates
     , nearbyRetailersResponse : ApiData Boobook.Response
@@ -67,7 +67,7 @@ centeredCoordinates okModel =
 
 type alias Flags =
     { mapboxAccessToken : String
-    , mapboxSessionToken : String
+    , mapboxSessionToken : Maybe String
     }
 
 
@@ -75,7 +75,7 @@ flagsDecoder : Decode.Decoder Flags
 flagsDecoder =
     Decode.succeed Flags
         |> Pipeline.required "mapboxAccessToken" Decode.string
-        |> Pipeline.required "mapboxSessionToken" Decode.string
+        |> Pipeline.optional "mapboxSessionToken" (Decode.nullable Decode.string) Nothing
 
 
 init : Json.Encode.Value -> ( Model, Cmd Msg )
@@ -112,6 +112,7 @@ type Msg
     | GotAutocompleteMsg Autocomplete.Msg
     | UserMovedMap MapboxGl.MapView
     | JsSentUserCurrentPosition (Result String Coordinates)
+    | JsSentMapboxSessionToken String
     | UserMouseEnteredMarker String
     | UserMouseLeftMarker
 
@@ -128,34 +129,41 @@ update msg model =
                     ( Ok okModel, Cmd.none )
 
                 GotAutocompleteMsg autocompleteMsg ->
-                    let
-                        ( autocomplete, cmd, outMsg ) =
-                            Autocomplete.update { mapboxAccessToken = okModel.mapboxAccessToken, mapboxSessionToken = okModel.mapboxSessionToken }
-                                autocompleteMsg
-                                okModel.autocomplete
-                    in
-                    case outMsg of
+                    case okModel.mapboxSessionToken of
                         Nothing ->
-                            ( Ok { okModel | autocomplete = autocomplete }
-                            , Cmd.map GotAutocompleteMsg cmd
+                            ( Ok okModel
+                            , Cmd.none
                             )
 
-                        Just (Autocomplete.OutMsgUserSelectedSuggestion suggestion) ->
-                            ( Ok
-                                { okModel
-                                    | autocomplete = autocomplete
-                                    , selectedLocation = ApiData.toLoading okModel.selectedLocation
-                                }
-                            , Cmd.batch
-                                [ Cmd.map GotAutocompleteMsg cmd
-                                , Mapbox.retrieveSuggestion
-                                    { mapboxAccessToken = okModel.mapboxAccessToken
-                                    , mapboxSessionToken = okModel.mapboxSessionToken
-                                    , mapboxId = Mapbox.mapboxId suggestion
-                                    }
-                                    ApiRespondedWithRetrievedFeature
-                                ]
-                            )
+                        Just mapboxSessionToken ->
+                            let
+                                ( autocomplete, cmd, outMsg ) =
+                                    Autocomplete.update { mapboxAccessToken = okModel.mapboxAccessToken, mapboxSessionToken = mapboxSessionToken }
+                                        autocompleteMsg
+                                        okModel.autocomplete
+                            in
+                            case outMsg of
+                                Nothing ->
+                                    ( Ok { okModel | autocomplete = autocomplete }
+                                    , Cmd.map GotAutocompleteMsg cmd
+                                    )
+
+                                Just (Autocomplete.OutMsgUserSelectedSuggestion suggestion) ->
+                                    ( Ok
+                                        { okModel
+                                            | autocomplete = autocomplete
+                                            , selectedLocation = ApiData.toLoading okModel.selectedLocation
+                                        }
+                                    , Cmd.batch
+                                        [ Cmd.map GotAutocompleteMsg cmd
+                                        , Mapbox.retrieveSuggestion
+                                            { mapboxAccessToken = okModel.mapboxAccessToken
+                                            , mapboxSessionToken = mapboxSessionToken
+                                            , mapboxId = Mapbox.mapboxId suggestion
+                                            }
+                                            ApiRespondedWithRetrievedFeature
+                                        ]
+                                    )
 
                 ApiRespondedWithRetrievedFeature result ->
                     ( Ok { okModel | selectedLocation = ApiData.fromResult result }
@@ -216,6 +224,11 @@ update msg model =
                             Cmd.none
                     )
 
+                JsSentMapboxSessionToken mapboxSessionToken ->
+                    ( Ok { okModel | mapboxSessionToken = Just mapboxSessionToken }
+                    , Cmd.none
+                    )
+
                 UserMovedMap mapView ->
                     ( Ok { okModel | mapView = Just mapView }
                     , let
@@ -259,16 +272,19 @@ subscriptions _ =
                     (\str ->
                         case str of
                             "CurrentPositionSuccess" ->
-                                Decode.map Ok Coordinates.decoder
+                                Decode.map (JsSentUserCurrentPosition << Ok) Coordinates.decoder
 
                             "CurrentPositionError" ->
-                                Decode.map Err (Decode.field "error" Decode.string)
+                                Decode.map (JsSentUserCurrentPosition << Err) (Decode.field "error" Decode.string)
+
+                            "MapboxSessionToken" ->
+                                Decode.map JsSentMapboxSessionToken (Decode.field "mapboxSessionToken" Decode.string)
 
                             _ ->
-                                Decode.fail "Unexpected type"
+                                Decode.succeed NoOp
                     )
             )
-            >> Result.Extra.unpack (\_ -> NoOp) JsSentUserCurrentPosition
+            >> Result.Extra.unwrap NoOp identity
         )
 
 
@@ -309,7 +325,7 @@ view model =
                         _ ->
                             []
             in
-            Html.main_ [ Attributes.class "grid @container text-gray-950" ]
+            Html.main_ [ Attributes.class "grid @container text-grey-600" ]
                 [ Html.div [ Attributes.class "grid grid-cols-1 grid-flow-row @min-xl:grid-cols-[clamp(18rem,_50cqi,_24rem)_1fr] @min-xl:grid-rows-[auto_1fr] @min-xl:h-[50vh] min-h-[28rem]" ]
                     [ Html.div [ Attributes.class "@min-xl:[grid-row:1] @min-xl:[grid-column:1]" ]
                         [ Html.div [ Attributes.class "" ]

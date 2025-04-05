@@ -7,12 +7,6 @@ import { Picture } from "astro:assets"
 import originalScreenshot from "../assets/original.png"
 
 const mapboxAccessToken = getSecret("MAPBOX_ACCESS_TOKEN")
-
-let mapboxSessionToken = await Astro.session?.get("session_id")
-if (!mapboxSessionToken) {
-  mapboxSessionToken = crypto.randomUUID()
-  Astro.session?.set("session_id", mapboxSessionToken)
-}
 ---
 
 <Layout>
@@ -43,11 +37,7 @@ if (!mapboxSessionToken) {
     </div>
 
     <div class="full font-brand-sans bg-white shadow-lg unset-prose">
-      <Main
-        client:load
-        mapboxSessionToken={mapboxSessionToken}
-        mapboxAccessToken={mapboxAccessToken}
-      />
+      <Main client:load mapboxAccessToken={mapboxAccessToken} />
     </div>
 
     <div class="prose mt-16 mb-32">
@@ -83,6 +73,15 @@ if (!mapboxSessionToken) {
               })
             }
           )
+
+          const mapboxSessionToken =
+            window.sessionStorage.getItem("session_id") ??
+            window.crypto.randomUUID()
+          window.sessionStorage.setItem("session_id", mapboxSessionToken)
+          app.ports?.fromJs.send?.({
+            type: "MapboxSessionToken",
+            mapboxSessionToken,
+          })
         }
       }
     </script>
