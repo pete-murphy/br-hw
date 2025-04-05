@@ -359,7 +359,7 @@ view model =
 
                             ( ApiData.Empty, True ) ->
                                 [ Html.div
-                                    [ Attributes.class "py-2 px-6 text-gray-700" ]
+                                    [ Attributes.class "py-2 px-6 text-grey-500" ]
                                     [ Html.text "Loading nearby retailers..." ]
                                 ]
 
@@ -409,12 +409,12 @@ view model =
                                     [] ->
                                         if isLoading then
                                             Html.div
-                                                [ Attributes.class "py-2 px-6 text-gray-700" ]
+                                                [ Attributes.class "py-2 px-6 text-grey-500" ]
                                                 [ Html.text "Loading nearby retailers..." ]
 
                                         else
                                             Html.div
-                                                [ Attributes.class "py-2 px-6 text-gray-700" ]
+                                                [ Attributes.class "py-2 px-6 text-grey-500" ]
                                                 [ Html.text "No nearby retailers found." ]
 
                                     _ ->
@@ -458,12 +458,12 @@ view model =
                                                                     , Html.div [ Attributes.class "grid gap-0.5" ]
                                                                         [ Html.h2 [ Attributes.class "" ]
                                                                             [ Html.text retailer.name ]
-                                                                        , Html.address [ Attributes.class "text-sm not-italic font-light text-gray-700" ]
+                                                                        , Html.address [ Attributes.class "text-sm not-italic font-light text-grey-500" ]
                                                                             (Html.Parser.Util.toVirtualDom
                                                                                 retailer.address
                                                                             )
                                                                         ]
-                                                                    , Html.div [ Attributes.class "text-sm font-light text-gray-700" ]
+                                                                    , Html.div [ Attributes.class "text-sm font-light text-grey-500" ]
                                                                         [ distanceFormatter { distanceInKms = retailer.distanceInKms }
                                                                             []
                                                                         ]

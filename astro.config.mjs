@@ -22,5 +22,5 @@ export default defineConfig({
   //   driver: "sessionStorage",
   // },
 
-  adapter: cloudflare(),
+  // adapter: cloudflare(),
 })
