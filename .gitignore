@@ -4,3 +4,4 @@ elm-stuff/
 .env
 .pre-commit-config.yaml
 .astro/
+.DS_Store
