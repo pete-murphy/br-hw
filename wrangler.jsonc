@@ -1,0 +1,9 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "bellroy-hw",
+  // Update to today's date
+  "compatibility_date": "2025-04-03",
+  "assets": {
+    "directory": "./dist",
+  },
+}
