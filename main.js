@@ -53,6 +53,7 @@ customElements.define(
         accessToken: mapboxAccessToken,
         maxZoom: 16,
         minZoom: 2,
+        cooperativeGestures: true,
       }).setPadding({
         top: 10,
         right: 10,
