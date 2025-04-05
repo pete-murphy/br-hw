@@ -1,22 +1,32 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 @source "../../src/elm";
+@source "../../src/**/*.astro";
+
+@layer utilities {
+  .prose {
+    max-width: unset;
+    display: grid;
+    grid-template-columns:
+      [gutter-start] 1fr
+      [full-start] clamp(1rem, 10vw, 8rem)
+      [content-start] minmax(auto, 65ch)
+      [content-end] clamp(1rem, 10vw, 8rem)
+      [full-end] 1fr
+      [gutter-end];
+    padding: 0 1rem;
+    & > * {
+      grid-column: content;
+    }
+    & > .full {
+      grid-column: full;
+    }
+  }
+}
 
 @theme {
-  --font-sans: GTUltra;
-
-  /* ORANGE */
-  --color-accent-50: oklch(96.84% 0.014 46.23);
-  --color-accent-100: oklch(93.61% 0.027 47.21);
-  --color-accent-200: oklch(86.44% 0.06 45.85);
-  --color-accent-300: oklch(80.34% 0.09 45.8);
-  --color-accent-400: oklch(74.63% 0.121 45.15);
-  --color-accent-500: oklch(68.69% 0.155 44.19);
-  --color-accent-600: oklch(63.52% 0.182 41.07); /* #E15A1D */
-  --color-accent-700: oklch(51.33% 0.142 41.94);
-  --color-accent-800: oklch(39.08% 0.104 42.48);
-  --color-accent-900: oklch(24.5% 0.057 44.33);
-  --color-accent-950: oklch(17.14% 0.034 51.83);
+  --font-brand-sans: GTUltra;
 
   /* BLUISH GRAY */
   --color-neutral-50: oklch(98.5% 0.002 198.81);
@@ -31,19 +41,28 @@
   --color-neutral-900: oklch(20.383% 0.03483 215.64);
   --color-neutral-950: oklch(13% 0.028 212.67);
 
-  /* GRAY */
-  /* --color-gray-00: rgb(255, 255, 255);
-  --color-gray-50: rgb(252, 252, 252);
-  --color-gray-100: rgb(242, 242, 242);
-  --color-gray-200: rgb(235, 235, 235);
-  --color-gray-300: rgb(224, 224, 224);
-  --color-gray-400: rgb(204, 204, 204);
-  --color-gray-500: rgb(184, 184, 184);
-  --color-gray-600: rgb(179, 179, 179);
-  --color-gray-700: rgb(161, 161, 161);
-  --color-gray-800: rgb(128, 128, 128);
-  --color-gray-900: rgb(51, 51, 51);
-  --color-gray-950: rgb(26, 26, 26); */
+  --color-white: #ffffff;
+  --color-grey-100: #f7f7f7;
+  --color-grey-200: #efefef;
+  --color-grey-300: #dbdbdb;
+  --color-grey-400: #9b9b9b;
+  --color-grey-500: #666666;
+  --color-grey-600: #333333;
+  --color-pop-orange: #e15a1d;
+  --color-accent-dark: #c75724;
+  --color-accent: #e15a1d;
+  --color-text-primary: var(--color-grey-600);
+  --color-text-secondary: var(--color-grey-500);
+  --color-text-tertiary: var(--color-grey-400);
+  --color-text-inverted: var(--color-white);
+  --color-text-brand: var(--color-pop-orange);
+  --color-surface-primary: var(--color-grey-100);
+  --color-surface-secondary: var(--color-grey-300);
+  --color-surface-tertiary: var(--color-grey-400);
+  --color-surface-brand: var(--color-pop-orange);
+  --link-color-text: var(--color-text-brand);
+  --modal-color-surface: #efeae5;
+  --modal-header-color: var(--color-text-brand);
 }
 
 @layer typography {

@@ -339,7 +339,7 @@ view model =
                 [ Html.text "Find in-store" ]
             )
             (Html.div
-                [ Attributes.class "grid p-2 border border-gray-500 border-solid grid-cols-[1fr_auto] has-focus-visible:ring-4 has-focus-visible:ring-accent-600"
+                [ Attributes.class "grid p-2 border border-solid ring-transparent border-grey-600 grid-cols-[1fr_auto] ring-3 has-focus-visible:ring-accent hover:ring-accent/25"
                 ]
                 [ inputFocusManager
                     { hasFocus = model.focus == Input
@@ -380,7 +380,7 @@ view model =
                         , Events.onInput UserEnteredSearch
                         , Events.onFocus (UserFocused Input)
                         , Events.onBlur (UserBlurred Input)
-                        , Attributes.class "grid p-2 outline-none placeholder:text-gray-500"
+                        , Attributes.class "grid p-2 outline-none placeholder:text-grey-400"
                         ]
                     ]
                 , Html.div [ Attributes.class "grid items-center p-2" ]
@@ -389,7 +389,7 @@ view model =
                             [ Svg.Attributes.viewBox "0 0 24 24"
                             , Svg.Attributes.fill "currentColor"
                             , Svg.Attributes.class "size-6"
-                            , Svg.Attributes.class "text-gray-600 animate-spin"
+                            , Svg.Attributes.class "animate-spin text-grey-400"
                             ]
                             [ Svg.path
                                 [ Svg.Attributes.fillRule "evenodd"
@@ -423,7 +423,7 @@ view model =
             , Attributes.class "relative z-10 w-full"
             ]
             [ Html.div
-                [ Attributes.class "absolute w-full h-0 bg-white border border-gray-500 border-solid shadow-md opacity-0 ease-out group transition-[height,_opacity] overflow-clip transition-discrete"
+                [ Attributes.class "absolute w-full h-0 bg-white border border-solid shadow-md opacity-0 ease-out border-grey-600 group transition-[height,_opacity] overflow-clip transition-discrete"
                 , Attributes.classList
                     [ ( "opacity-100 ease-in h-[calc-size(auto,_size)]", isExpanded ) ]
                 ]
@@ -485,7 +485,7 @@ view model =
                                                     )
                                                 ]
                                                 [ Html.button
-                                                    [ Attributes.class "py-2 px-4 w-full outline-none focus:text-white focus:bg-gray-700 active:bg-gray-800 active:transition-colors text-start group-hover:not-hover:focus:bg-gray-600 hover:not-focus:bg-gray-300"
+                                                    [ Attributes.class "py-2 px-4 w-full outline-none focus:text-white active:transition-colors text-start group-hover:not-hover:focus:bg-grey-600 hover:not-focus:bg-grey-300 focus:bg-grey-600 active:bg-accent-dark"
                                                     , Attributes.tabindex -1
                                                     , Events.onBlur (UserBlurred (Listbox { index = i }))
                                                     , Events.onFocus (UserFocused (Listbox { index = i }))

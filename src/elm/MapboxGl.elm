@@ -87,7 +87,7 @@ view props =
 
             Just coordinates ->
                 centerAttribute coordinates
-        , Attributes.class "grid w-full h-full **:[.mapboxgl-marker]:!transition-colors **:[[data-highlighted=true]]:text-accent-600 **:[[data-highlighted=true]]:z-10 **:[[data-highlighted=false]]:text-gray-900/25"
+        , Attributes.class "grid w-full h-full **:[.mapboxgl-marker]:!transition-colors **:[[data-highlighted=true]]:text-accent-dark **:[[data-highlighted=true]]:z-10 **:[[data-highlighted=false]]:text-gray-900/25"
         , Events.on "load" (decodeMapViewDetail |> Decode.map props.onMove)
         , Events.on "moveend" (decodeMapViewDetail |> Decode.map props.onMove)
         , markersAttribute props.markers

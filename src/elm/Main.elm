@@ -423,7 +423,7 @@ view model =
                                                                             , Svg.Attributes.fill "currentColor"
                                                                             , Svg.Attributes.class "transition size-6"
                                                                             , if isHighlighted then
-                                                                                Svg.Attributes.class "text-accent-600"
+                                                                                Svg.Attributes.class "text-accent-dark"
 
                                                                               else if Maybe.Extra.isJust okModel.highlightedRetailerId then
                                                                                 Svg.Attributes.class "opacity-25"

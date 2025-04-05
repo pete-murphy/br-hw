@@ -3,6 +3,8 @@ import Main from "../elm/Main.elm"
 import { getSecret } from "astro:env/server"
 import Layout from "../layouts/main.astro"
 import CustomElements from "../components/customElements.astro"
+import { Picture } from "astro:assets"
+import originalScreenshot from "../assets/original.png"
 
 const mapboxAccessToken = getSecret("MAPBOX_ACCESS_TOKEN")
 
@@ -15,31 +17,74 @@ if (!mapboxSessionToken) {
 
 <Layout>
   <CustomElements />
-  <Main
-    client:load
-    mapboxSessionToken={mapboxSessionToken}
-    mapboxAccessToken={mapboxAccessToken}
-  />
-  <script>
-    window.onElmInit = (elmModuleName: string, app: ElmApp) => {
-      if (elmModuleName === "Main") {
-        // Get the user's current position as soon as the app loads, and send it to Elm
-        window.navigator.geolocation.getCurrentPosition(
-          (currentPosition) => {
-            app.ports?.fromJs.send?.({
-              type: "CurrentPositionSuccess",
-              latitude: currentPosition.coords.latitude,
-              longitude: currentPosition.coords.longitude,
-            })
-          },
-          (error) => {
-            app.ports?.fromJs.send?.({
-              type: "CurrentPositionError",
-              error: error.message,
-            })
-          }
-        )
+
+  <main class="mt-16 grid gap-8">
+    <div class="prose my-16">
+      <h1>Find in-store: map and combobox</h1>
+      <figure class="full">
+        <Picture
+          formats={["avif", "webp"]}
+          src={originalScreenshot}
+          alt="Screenshot of the bellroy.com Find in-store page"
+        />
+      </figure>
+      <p>
+        The navigation widget of the <strong>Find in-store</strong> page (<a
+          href="https://bellroy.com/retailers">https://bellroy.com/retailers</a
+        >) uses Google Maps & <a
+          href="https://developers.google.com/maps/documentation/javascript/places-autocomplete"
+          >Place Autocomplete Widget</a
+        > from what I can tell. These solutions work well and have great UX, but
+        I thought it would be a fun challenge to try a variation that incorporates
+        some Bellroy brand typography and colors. I also wanted to add what felt
+        like a small UX enhancement of a hover interaction to help with finding the
+        corresponding map marker for a retailer in the list.
+      </p>
+    </div>
+
+    <div class="full font-brand-sans bg-white shadow-lg unset-prose">
+      <Main
+        client:load
+        mapboxSessionToken={mapboxSessionToken}
+        mapboxAccessToken={mapboxAccessToken}
+      />
+    </div>
+
+    <div class="prose mt-16 mb-32">
+      <p>
+        The map is implemented as a thin Elm & HTML custom element wrapper
+        around Mapbox GL JS. The combobox is much more elaborate piece of work,
+        way more complicated than I had anticipated. The idea was to implement
+        the ARIA combobox pattern, specifically the <em
+          >List autocomplete with manual selection</em
+        > variant from the <a
+          href="https://www.w3.org/WAI/ARIA/apg/patterns/combobox/"
+          >authoring guide</a
+        >.
+      </p>
+    </div>
+
+    <script>
+      window.onElmInit = (elmModuleName: string, app: ElmApp) => {
+        if (elmModuleName === "Main") {
+          // Get the user's current position as soon as the app loads, and send it to Elm
+          window.navigator.geolocation.getCurrentPosition(
+            (currentPosition) => {
+              app.ports?.fromJs.send?.({
+                type: "CurrentPositionSuccess",
+                latitude: currentPosition.coords.latitude,
+                longitude: currentPosition.coords.longitude,
+              })
+            },
+            (error) => {
+              app.ports?.fromJs.send?.({
+                type: "CurrentPositionError",
+                error: error.message,
+              })
+            }
+          )
+        }
       }
-    }
-  </script>
+    </script>
+  </main>
 </Layout>
