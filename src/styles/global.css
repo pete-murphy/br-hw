@@ -23,6 +23,11 @@
       grid-column: full;
     }
   }
+
+  .h-calc-auto {
+    height: auto;
+    height: calc-size(auto, size);
+  }
 }
 
 @theme {

@@ -425,7 +425,7 @@ view model =
             [ Html.div
                 [ Attributes.class "absolute w-full h-0 bg-white border border-solid shadow-md opacity-0 ease-out border-grey-600 group transition-[height,_opacity] overflow-clip transition-discrete"
                 , Attributes.classList
-                    [ ( "opacity-100 ease-in h-[calc-size(auto,_size)]", isExpanded ) ]
+                    [ ( "opacity-100 ease-in h-calc-auto", isExpanded ) ]
                 ]
                 [ case ( ApiData.value (model.searchResults |> ApiData.map .results), ApiData.isLoading model.searchResults ) of
                     ( ApiData.Success [], _ ) ->
