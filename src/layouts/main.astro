@@ -11,7 +11,15 @@ import "../styles/global.css"
     <meta name="generator" content={Astro.generator} />
     <title>Bellroy HW - Peter Murphy</title>
   </head>
-  <body class="bg-neutral-100 grid justify-center">
+  <body class="bg-tower-gray-100 grid justify-center group">
+    <script>
+      const isSafari = /^((?!chrome|android).)*safari/i.test(
+        navigator.userAgent
+      )
+      if (isSafari) {
+        document.body.classList.add("safari")
+      }
+    </script>
     <slot />
   </body>
 </html>

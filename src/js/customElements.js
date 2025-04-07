@@ -18,7 +18,7 @@ customElements.define(
     connectedCallback() {
       this.map = new MapboxGL.Map({
         container: this,
-        style: "mapbox://styles/pfmurphy/cm926nnxe001v01qucyix2i3z",
+        style: "mapbox://styles/pfmurphy/cm95zdls0003g01qh1p3da2ym",
         center: [0, 0],
         zoom: 2,
         accessToken: this.getAttribute("access-token"),
@@ -106,6 +106,8 @@ customElements.define(
 </svg>`
           el.style.width = `2rem`
           el.style.height = `2rem`
+          el.style.strokeWidth = `1px`
+          el.style.stroke = `rgba(255, 255, 255, 0.25)`
           el.dataset.id = marker.id
           el.onmouseenter = () => {
             this.dispatchEvent(

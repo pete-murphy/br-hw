@@ -33,18 +33,31 @@
 @theme {
   --font-brand-sans: GTUltra;
 
-  /* BLUISH GRAY */
-  --color-neutral-50: oklch(98.5% 0.002 198.81);
-  --color-neutral-100: oklch(95.775% 0.00425 215.52);
-  --color-neutral-200: oklch(90.95% 0.0085 215.51);
-  --color-neutral-300: oklch(84.425% 0.01375 209.31);
-  --color-neutral-400: oklch(67% 0.027 212.3);
-  --color-neutral-500: oklch(52.017% 0.03117 215.34);
-  --color-neutral-600: oklch(42.133% 0.03333 207.78);
-  --color-neutral-700: oklch(35.45% 0.0365 210.71);
-  --color-neutral-800: oklch(26.567% 0.03467 207.82);
-  --color-neutral-900: oklch(20.383% 0.03483 215.64);
-  --color-neutral-950: oklch(13% 0.028 212.67);
+  /* based on #EFEAE5 */
+  --color-pampas-50: #f8f6f4;
+  --color-pampas-100: #efeae5;
+  --color-pampas-200: #ded4ca;
+  --color-pampas-300: #c9b7a8;
+  --color-pampas-400: #b29685;
+  --color-pampas-500: #a37f6c;
+  --color-pampas-600: #956f61;
+  --color-pampas-700: #7d5b51;
+  --color-pampas-800: #664c46;
+  --color-pampas-900: #543f3a;
+  --color-pampas-950: #2c201e;
+
+  /* based on #A6B8BB */
+  --color-tower-gray-50: #f6f9f9;
+  --color-tower-gray-100: #edf0f1;
+  --color-tower-gray-200: #d7dfe0;
+  --color-tower-gray-300: #a6b8bb;
+  --color-tower-gray-400: #8ba2a5;
+  --color-tower-gray-500: #6c878b;
+  --color-tower-gray-600: #576e72;
+  --color-tower-gray-700: #47595d;
+  --color-tower-gray-800: #3d4c4f;
+  --color-tower-gray-900: #364244;
+  --color-tower-gray-950: #242b2d;
 
   --color-white: #ffffff;
   --color-grey-100: #f7f7f7;
@@ -53,7 +66,8 @@
   --color-grey-400: #9b9b9b;
   --color-grey-500: #666666;
   --color-grey-600: #333333;
-  --color-pop-orange: #e15a1d;
+  --color-grey-700: #222222;
+  --color-grey-800: #111111;
   --color-accent-dark: #c75724;
   --color-accent: #e15a1d;
   --color-text-primary: var(--color-grey-600);
@@ -66,7 +80,7 @@
   --color-surface-tertiary: var(--color-grey-400);
   --color-surface-brand: var(--color-pop-orange);
   --link-color-text: var(--color-text-brand);
-  --modal-color-surface: #efeae5;
+  --modal-color-surface: var(--color-pampas-100);
   --modal-header-color: var(--color-text-brand);
 }
 
