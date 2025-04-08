@@ -71,6 +71,7 @@
 
             # Scripts
             pkgs.just
+            pkgs.bun
 
             # Tailwind
             pkgs.rustywind

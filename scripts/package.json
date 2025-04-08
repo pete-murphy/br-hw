@@ -1,0 +1,16 @@
+{
+  "name": "monochrome(cm95vg2vp001k01s510rp4m6d)",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/chroma-js": "^3.1.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "chroma-js": "^3.1.2",
+    "mapbox-gl": "^3.11.0"
+  }
+}
