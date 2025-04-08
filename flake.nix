@@ -36,10 +36,9 @@
             exclude_types = ["json"];
             settings.configPath = "./package.json";
           };
-          # .enable = true; # For JS/TS files
           rustywind = {
             enable = true;
-            entry = "just sort --check-formatted";
+            entry = "just sort";
             pass_filenames = false;
           };
         };

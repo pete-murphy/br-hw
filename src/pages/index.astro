@@ -38,10 +38,54 @@ const mapboxAccessToken = getSecret("MAPBOX_ACCESS_TOKEN")
       </p>
     </div>
 
+    <div>
+      <fieldset>
+        <legend>Color scheme</legend>
+
+        <div class="flex gap-2">
+          <div>
+            <input
+              type="radio"
+              id="system"
+              name="color-scheme"
+              value="light dark"
+              checked
+            />
+            <label for="system">System</label>
+          </div>
+
+          <div>
+            <input type="radio" id="light" name="color-scheme" value="light" />
+            <label for="light">Light</label>
+          </div>
+
+          <div>
+            <input type="radio" id="dark" name="color-scheme" value="dark" />
+            <label for="dark">Dark</label>
+          </div>
+        </div>
+      </fieldset>
+
+      <script>
+        const radios = document.querySelectorAll('input[name="color-scheme"]')
+        radios.forEach((radio) => {
+          radio.addEventListener("change", (event) => {
+            const colorScheme = (event.target as any).value
+            document.documentElement.style.setProperty(
+              "--color-scheme",
+              colorScheme
+            )
+          })
+        })
+      </script>
+    </div>
+
     <div
-      class="w-[calc(100vw-2rem)] mx-auto font-brand-sans bg-white shadow-lg unset-prose"
+      class="w-[calc(100vw-2rem)] mx-auto font-brand-sans bg-surface shadow-lg unset-prose"
     >
-      <div class="group-[:is(.safari)]:block hidden px-6 py-2">
+      <div
+        class="group-[:is(.safari)]:block hidden px-6 py-2 text-bluish-on-surface-dim"
+      >
         Note: For some reason on Safari, this font appears italicized. On
         Firefox or Chrome it appears as intended.
       </div>

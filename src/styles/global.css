@@ -4,8 +4,23 @@
 @source "../../src/elm";
 @source "../../src/**/*.astro";
 
+@layer theme {
+  :root {
+    --color-scheme: light dark;
+    color-scheme: var(--color-scheme);
+  }
+}
+
 @layer utilities {
+  :root {
+    --tw-shadow-color: light-dark(var(--color-neutral-950), transparent);
+  }
   .prose {
+    color: var(--color-on-primary);
+    --tw-prose-bold: var(--color-on-surface-dim);
+    --tw-prose-links: var(--color-on-surface-dim);
+    --tw-prose-code: var(--color-on-surface-dim);
+    --tw-prose-headings: var(--color-on-surface-dim);
     max-width: unset;
     display: grid;
     grid-template-columns:
@@ -69,8 +84,50 @@
   --color-grey-700: #222222;
   --color-grey-800: #111111;
   --color-accent-dark: #c75724;
-  --color-accent: #e15a1d;
-  --color-text-primary: var(--color-grey-600);
+  --color-accent-light: #e15a1d;
+
+  --color-accent: light-dark(
+    var(--color-accent-light),
+    var(--color-accent-light)
+  );
+  --color-on-primary: light-dark(
+    var(--color-neutral-950),
+    var(--color-neutral-50)
+  );
+  --color-on-primary-dim: light-dark(
+    var(--color-neutral-800),
+    var(--color-neutral-200)
+  );
+  --color-primary: light-dark(
+    var(--color-neutral-50),
+    var(--color-neutral-950)
+  );
+  --color-surface: light-dark(
+    var(--color-neutral-100),
+    var(--color-neutral-900)
+  );
+  --color-on-surface: light-dark(
+    var(--color-neutral-950),
+    var(--color-neutral-50)
+  );
+  --color-on-surface-dim: light-dark(
+    var(--color-neutral-700),
+    var(--color-neutral-300)
+  );
+  --color-bluish-surface: light-dark(
+    var(--color-tower-gray-100),
+    var(--color-tower-gray-900)
+  );
+  --color-bluish-on-surface: light-dark(
+    var(--color-tower-gray-950),
+    var(--color-tower-gray-50)
+  );
+  --color-bluish-on-surface-dim: light-dark(
+    var(--color-tower-gray-700),
+    var(--color-tower-gray-300)
+  );
+
+  /* --color-text-primary: var(--color-grey-600);
   --color-text-secondary: var(--color-grey-500);
   --color-text-tertiary: var(--color-grey-400);
   --color-text-inverted: var(--color-white);
@@ -81,7 +138,7 @@
   --color-surface-brand: var(--color-pop-orange);
   --link-color-text: var(--color-text-brand);
   --modal-color-surface: var(--color-pampas-100);
-  --modal-header-color: var(--color-text-brand);
+  --modal-header-color: var(--color-text-brand); */
 }
 
 @layer typography {

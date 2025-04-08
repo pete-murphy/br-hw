@@ -1,5 +1,6 @@
 port module Main exposing (main)
 
+import Accessibility.Aria as Aria
 import Accessibility.Live as Live
 import Accessibility.Role as Role
 import Api.Boobook as Boobook
@@ -325,7 +326,7 @@ view model =
                         _ ->
                             []
             in
-            Html.main_ [ Attributes.class "grid @container text-grey-600" ]
+            Html.main_ [ Attributes.class "grid @container text-on-primary" ]
                 [ Html.div [ Attributes.class "grid grid-cols-1 grid-flow-row @min-xl:grid-cols-[clamp(18rem,_50cqi,_24rem)_1fr] @min-xl:grid-rows-[auto_1fr] @min-xl:h-[50vh] min-h-[28rem]" ]
                     [ Html.div [ Attributes.class "@min-xl:[grid-row:1] @min-xl:[grid-column:1]" ]
                         [ Html.div [ Attributes.class "" ]
@@ -359,7 +360,7 @@ view model =
 
                             ( ApiData.Empty, True ) ->
                                 [ Html.div
-                                    [ Attributes.class "py-2 px-6 text-grey-500" ]
+                                    [ Attributes.class "py-2 px-6 text-bluish-on-surface-dim" ]
                                     [ Html.text "Loading nearby retailers..." ]
                                 ]
 
@@ -409,12 +410,12 @@ view model =
                                     [] ->
                                         if isLoading then
                                             Html.div
-                                                [ Attributes.class "py-2 px-6 text-grey-500" ]
+                                                [ Attributes.class "py-2 px-6 text-bluish-on-surface-dim" ]
                                                 [ Html.text "Loading nearby retailers..." ]
 
                                         else
                                             Html.div
-                                                [ Attributes.class "py-2 px-6 text-grey-500" ]
+                                                [ Attributes.class "py-2 px-6 text-bluish-on-surface-dim" ]
                                                 [ Html.text "No nearby retailers found." ]
 
                                     _ ->
@@ -439,7 +440,7 @@ view model =
                                                                             , Svg.Attributes.fill "currentColor"
                                                                             , Svg.Attributes.class "transition size-6"
                                                                             , if isHighlighted then
-                                                                                Svg.Attributes.class "text-accent-dark"
+                                                                                Svg.Attributes.class "text-accent"
 
                                                                               else if Maybe.Extra.isJust okModel.highlightedRetailerId then
                                                                                 Svg.Attributes.class "opacity-25"
@@ -458,12 +459,12 @@ view model =
                                                                     , Html.div [ Attributes.class "grid gap-0.5" ]
                                                                         [ Html.h2 [ Attributes.class "" ]
                                                                             [ Html.text retailer.name ]
-                                                                        , Html.address [ Attributes.class "text-sm not-italic font-light text-grey-500" ]
+                                                                        , Html.address [ Attributes.class "text-sm not-italic font-light text-bluish-on-surface-dim" ]
                                                                             (Html.Parser.Util.toVirtualDom
                                                                                 retailer.address
                                                                             )
                                                                         ]
-                                                                    , Html.div [ Attributes.class "text-sm font-light text-grey-500" ]
+                                                                    , Html.div [ Attributes.class "text-sm font-light text-bluish-on-surface-dim" ]
                                                                         [ distanceFormatter { distanceInKms = retailer.distanceInKms }
                                                                             []
                                                                         ]

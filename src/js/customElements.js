@@ -1,5 +1,25 @@
 import MapboxGL from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
+import StyleObserver, {
+  NotificationMode,
+  ReturnFormat,
+} from "@bramus/style-observer"
+
+const LIGHT_STYLE = "mapbox://styles/pfmurphy/cm95zdls0003g01qh1p3da2ym"
+const DARK_STYLE = "mapbox://styles/pfmurphy/cm96j9rx900ag01qt2uwseypm"
+const COLOR_SCHEME = "--color-scheme"
+
+const prefersColorSchemeDark = window.matchMedia("(prefers-color-scheme: dark)")
+
+function getColorScheme(
+  colorScheme = document.documentElement.style.getPropertyValue(COLOR_SCHEME)
+) {
+  const systemPreference = prefersColorSchemeDark.matches ? "dark" : "light"
+  if (colorScheme === "light dark" || colorScheme === "") {
+    return systemPreference
+  }
+  return colorScheme
+}
 
 // Mapbox GL custom element
 customElements.define(
@@ -13,12 +33,14 @@ customElements.define(
       this.map = null
       this.markers = new Map()
       this.moveendTimeout = null
+      this.styleObserver = null
     }
 
     connectedCallback() {
+      const colorScheme = getColorScheme()
       this.map = new MapboxGL.Map({
         container: this,
-        style: "mapbox://styles/pfmurphy/cm95zdls0003g01qh1p3da2ym",
+        style: colorScheme === "dark" ? DARK_STYLE : LIGHT_STYLE,
         center: [0, 0],
         zoom: 2,
         accessToken: this.getAttribute("access-token"),
@@ -31,6 +53,28 @@ customElements.define(
         bottom: 10,
         left: 10,
       })
+
+      // Listen for changes to prefers-color-scheme
+      prefersColorSchemeDark.addEventListener("change", (colorScheme) => {
+        const newColorScheme = getColorScheme(colorScheme)
+        this.map.setStyle(newColorScheme === "dark" ? DARK_STYLE : LIGHT_STYLE)
+      })
+
+      this.styleObserver = new StyleObserver(
+        () => {
+          const newColorScheme = getColorScheme()
+          this.map.setStyle(
+            newColorScheme === "dark" ? DARK_STYLE : LIGHT_STYLE
+          )
+        },
+        {
+          // TODO: using `--color-scheme` in here doesn't work?
+          properties: ["color-scheme"],
+          notificationMode: NotificationMode.IMMEDIATE,
+          returnFormat: ReturnFormat.STRING,
+        }
+      )
+      this.styleObserver.observe(document.documentElement)
 
       this.map.on("load", () => {
         this.dispatchEvent(
@@ -70,6 +114,10 @@ customElements.define(
       })
     }
 
+    disconnectedCallback() {
+      this.styleObserver?.disconnect()
+    }
+
     attributeChangedCallback(name, _, newValue) {
       if (name === "center") {
         const center = JSON.parse(newValue)
@@ -80,6 +128,7 @@ customElements.define(
           })
         }
       }
+
       if (name === "markers") {
         const markers = JSON.parse(newValue)
         const markersToAdd = markers.filter(
@@ -106,8 +155,9 @@ customElements.define(
 </svg>`
           el.style.width = `2rem`
           el.style.height = `2rem`
-          el.style.strokeWidth = `1px`
-          el.style.stroke = `rgba(255, 255, 255, 0.25)`
+          el.style.strokeWidth = `0.5px`
+          el.style.stroke = `var(--stroke-color)`
+          el.style.strokeOpacity = `0.5`
           el.dataset.id = marker.id
           el.onmouseenter = () => {
             this.dispatchEvent(
@@ -141,6 +191,7 @@ customElements.define(
           this.markers.set(marker.id, mapboxMarker)
         }
       }
+
       if (name === "highlighted-marker") {
         const highlightedMarkerId = JSON.parse(newValue)
         if (!highlightedMarkerId) {
